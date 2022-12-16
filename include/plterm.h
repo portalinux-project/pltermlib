@@ -8,7 +8,14 @@
 #define KEY_RIGHT 250
 #define KEY_LEFT 251
 
-typedef struct plterm plterm_t;
+typedef struct plterm {
+	struct termios original;
+	struct termios current;
+	uint16_t xSize;
+	uint16_t ySize;
+	uint16_t xPos;
+	uint16_t yPos;
+} plterm_t;
 
 void plTermGetSize(plterm_t* termStruct);
 void plTermInputDriver(unsigned char** bufferPointer, char* inputBuffer, plmt_t* mt);

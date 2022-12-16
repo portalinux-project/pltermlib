@@ -1,4 +1,4 @@
-#include "term.h"
+#include <plterm.h>
 
 int main(){
 	plmt_t* mt = plMTInit(0);
