@@ -1,6 +1,28 @@
 #include <plterm.h>
 
-void plTermGetSize(plterm_t* termStruct){
+struct plterm {
+	struct termios original;
+	struct termios current;
+	uint16_t xSize;
+	uint16_t ySize;
+	uint16_t xPos;
+	uint16_t yPos;
+};
+
+void plTermGetAttrib(size_t* buf, int attrib, plterm_t* termStruct){
+	switch(attrib){
+		case PLTERM_SIZE:
+			buf[0] = termStruct->xSize;
+			buf[1] = termStruct->ySize;
+			break;
+		case PLTERM_POS:
+			buf[0] = termStruct->xPos;
+			buf[1] = termStruct->yPos;
+			break;
+	}
+}
+
+void plTermUpdateSize(plterm_t* termStruct){
 	char tempBuf[16] = "";
 	write(STDOUT_FILENO, "\x1b[9999;9999H\0", 13);
 	write(STDOUT_FILENO, "\x1b[6n\0", 5);
@@ -8,7 +30,7 @@ void plTermGetSize(plterm_t* termStruct){
 	if(offset < 0){
 		tcsetattr(STDOUT_FILENO, 0, &(termStruct->original));
 		write(STDOUT_FILENO, "\r", 1);
-		perror("plTermGetTermSize");
+		perror("plTermUpdateSize");
 		abort();
 	}
 
@@ -70,12 +92,34 @@ unsigned char* plTermGetInput(plmt_t* mt){
 	return retVar;
 }
 
-void plTermMove(plterm_t* termStruct, int x,  int y){
-	char tempStr[16];
+void plTermMove(plterm_t* termStruct, uint16_t x, uint16_t x){
+	char tempStr[16] = "";
 	snprintf(tempStr, 16, "\x1b[%d;%dH", y, x);
 	write(STDOUT_FILENO, tempStr, strlen(tempStr));
 	termStruct->xPos = x;
 	termStruct->yPos = y;
+}
+
+void plTermRelMove(plterm_t* termStruct, int x, int y){
+	char tempStr[8] = "";
+
+	if(x != 0){
+		if(x < 0)
+			snprintf(tempStr, 8, "\x1b[%dC", -x);
+		else
+			snprintf(tempStr, 8, "\x1b[%dD", x);
+		write(STDOUT_FILENO, tempStr, strlen);
+		termStruct->xPos += x;
+	}
+
+	if(y != 0){
+		if(y < 0)
+			snprintf(tempStr, 8, "\x1b[%dA", -y);
+		else
+			snprintf(tempStr, 8, "\x1b[%dB", y);
+		write(STDOUT_FILENO, tempStr, strlen);
+		termStruct->yPos += y;
+	}
 }
 
 int plTermChangeColor(uint8_t color){
@@ -122,7 +166,7 @@ plterm_t* plTermInit(plmt_t* mt){
 
 	retStruct->xPos = 1;
 	retStruct->yPos = 1;
-	plTermGetSize(retStruct);
+	plTermUpdateSize(retStruct);
 	write(STDOUT_FILENO, "\x1b[2J", 4);
 	return retStruct;
 }

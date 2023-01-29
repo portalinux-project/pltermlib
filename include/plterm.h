@@ -8,19 +8,15 @@
 #define KEY_RIGHT 250
 #define KEY_LEFT 251
 
-typedef struct plterm {
-	struct termios original;
-	struct termios current;
-	uint16_t xSize;
-	uint16_t ySize;
-	uint16_t xPos;
-	uint16_t yPos;
-} plterm_t;
+#define PLTERM_SIZE 1
+#define PLTERM_POS 2
 
-void plTermGetSize(plterm_t* termStruct);
-void plTermInputDriver(unsigned char** bufferPointer, char* inputBuffer, plmt_t* mt);
+typedef struct plterm plterm_t;
+
+void plTermGetAttrib(size_t* buf, int attrib, plterm_t* termStruct);
 unsigned char* plTermGetInput(plmt_t* mt);
-void plTermMove(plterm_t* termStruct, int x,  int y);
+void plTermMove(plterm_t* termStruct, uint16_t x, uint16_t y);
+void plTermRelMove(plterm_t* termStruct, int x, int y);
 int plTermChangeColor(uint8_t color);
 void plTermPrint(plterm_t* termStruct, char* string);
 void plTermMovePrint(plterm_t* termStruct, int x, int y, char* string);
