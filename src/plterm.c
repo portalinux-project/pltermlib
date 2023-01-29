@@ -92,7 +92,7 @@ unsigned char* plTermGetInput(plmt_t* mt){
 	return retVar;
 }
 
-void plTermMove(plterm_t* termStruct, uint16_t x, uint16_t x){
+void plTermMove(plterm_t* termStruct, uint16_t x, uint16_t y){
 	char tempStr[16] = "";
 	snprintf(tempStr, 16, "\x1b[%d;%dH", y, x);
 	write(STDOUT_FILENO, tempStr, strlen(tempStr));
@@ -108,7 +108,7 @@ void plTermRelMove(plterm_t* termStruct, int x, int y){
 			snprintf(tempStr, 8, "\x1b[%dC", -x);
 		else
 			snprintf(tempStr, 8, "\x1b[%dD", x);
-		write(STDOUT_FILENO, tempStr, strlen);
+		write(STDOUT_FILENO, tempStr, strlen(tempStr));
 		termStruct->xPos += x;
 	}
 
@@ -117,7 +117,7 @@ void plTermRelMove(plterm_t* termStruct, int x, int y){
 			snprintf(tempStr, 8, "\x1b[%dA", -y);
 		else
 			snprintf(tempStr, 8, "\x1b[%dB", y);
-		write(STDOUT_FILENO, tempStr, strlen);
+		write(STDOUT_FILENO, tempStr, strlen(tempStr));
 		termStruct->yPos += y;
 	}
 }
