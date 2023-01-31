@@ -131,14 +131,12 @@ int plTermChangeColor(uint8_t color){
 
 	char colorStr[6];
 	snprintf(colorStr, 6, "\x1b[%dm", color);
-	write(STDOUT_FILENO, colorStr, 6);
-	write(STDOUT_FILENO, "\0", 1);
+	write(STDOUT_FILENO, colorStr, strlen(colorStr));
 	return 0;
 }
 
 void plTermPrint(plterm_t* termStruct, char* string){
 	write(STDOUT_FILENO, string, strlen(string));
-	write(STDOUT_FILENO, "\0", 1);
 
 	termStruct->xPos += strlen(string);
 	if(termStruct->xPos > termStruct->xSize){
@@ -152,14 +150,14 @@ void plTermMovePrint(plterm_t* termStruct, int x, int y, char* string){
 	plTermPrint(termStruct, string);
 }
 
-plterm_t* plTermInit(plmt_t* mt, bool nonBlockInput){
+plterm_t* plTermInit(plmt_t* mt){
 	plterm_t* retStruct = plMTAllocE(mt, sizeof(plterm_t));
 	struct termios* og = &(retStruct->original);
 	struct termios* cur = &(retStruct->current);
 
 	tcgetattr(STDIN_FILENO, og);
 
-	cur->c_cflag &= ~( ICANON | ECHO);
+	cur->c_cflag &= ~(ICANON | ECHO);
 	cur->c_cc[VMIN] = 1;
 	cur->c_cc[VTIME] = 0;
 	tcsetattr(STDIN_FILENO, TCSANOW, cur);
