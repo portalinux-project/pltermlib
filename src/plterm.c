@@ -152,7 +152,7 @@ void plTermMovePrint(plterm_t* termStruct, int x, int y, char* string){
 	plTermPrint(termStruct, string);
 }
 
-plterm_t* plTermInit(plmt_t* mt){
+plterm_t* plTermInit(plmt_t* mt, bool nonBlockInput){
 	plterm_t* retStruct = plMTAllocE(mt, sizeof(plterm_t));
 	struct termios* og = &(retStruct->original);
 	struct termios* cur = &(retStruct->current);

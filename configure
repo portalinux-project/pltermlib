@@ -11,6 +11,12 @@ includedir="$prefix/include"
 platform="c"
 indev=0
 
+fatal_error(){
+	echo "Error: $@!"
+	echo "Notice: If you're not a project maintainer, this is a bug. Please report this to the project maintainers."
+	exit 1
+}
+
 update_prefixes(){
 	if [ "$1" = "" ]; then
 		exec_prefix="$prefix"
@@ -22,17 +28,15 @@ update_prefixes(){
 
 generate_config(){
 	if [ ! -f ./defaults.conf ]; then
-		echo "Error: Defaults file is missing!"
-		echo "Notice: If you're not the project maintainer, this is a bug. Please report this to the project maintainers."
-		exit 1
+		fatal_error "Defaults file is missing"
 	fi
 
 	. ./defaults.conf
 
-	if [ "$src" = "" ]; then
-		echo "Error: Sources field is empty!"
-		echo "Notice: If you're not the project maintainer, this is a bug. Please report this to the project maintainers."
-		exit 1
+	if [ "$main_project" = "" ]; then
+		fatal_error "Main project field is empty"
+	elif [ $(echo "$main_project" | grep -c '|') -lt 1 ]; then
+		fatal_error "Invalid main project field"
 	fi
 
 	echo "Checking install prefix...$prefix"
@@ -73,29 +77,9 @@ generate_config(){
 
 	compile_config_str="CC=\"$CC\"\nCFLAGS=\"$CFLAGS\"\nAR=\"$AR\"\nRANLIB=\"$RANLIB\"\n"
 	install_config_str="prefix=\"$prefix\"\nexec_prefix=\"$exec_prefix\"\nbindir=\"$bindir\"\nlibdir=\"$libdir\"\nincludedir=\"$includedir\"\n"
-	src_config_str=""
 
 	if [ "$LDFLAGS" != "" ]; then
 		compile_config_str="LDFLAGS=\"$LDFLAGS\"\n$compile_config_str"
-	fi
-
-	if [ "$platform" != "c" ]; then
-		case $platform in
-			win32 | mingw)
-				if [ "$separate_platforms" != ""]; then
-					src_config_str="src_win32=\"$src_win32\"\n"
-				else
-					src="$src $src_win32"
-				fi
-				;;
-			posix)
-				if [ "$separate_platforms" != ""]; then
-					src_config_str="src_posix=\"$src_posix\"\n"
-				else
-					src="$src $src_posix"
-				fi
-				;;
-		esac
 	fi
 
 	if [ $indev -eq 1 ]; then
@@ -103,7 +87,7 @@ generate_config(){
 	fi
 
 	printf "$compile_config_str\n$install_config_str\n" > ./.config
-	printf "src=\"$src\"\n$src_config_str" >> ./.config
+	printf "main_project=\"$main_project\"\n\n" >> ./.config
 
 	if [ -f ./custom.conf ]; then
 		cat custom.conf >> ./.config

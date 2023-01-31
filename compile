@@ -21,6 +21,13 @@ _compile_obj(){
 	fi
 }
 
+_parse_projectstruct(){
+	libname=$(echo "$1" | cut -d'|' -f1)
+	src=$(echo "$1" | cut -d'|' -f2 | sed 's/,/\ /g')
+	libtest=$(echo "$1" | cut -d'|' -f3)
+	srcdir=$(echo "$1" | cut -d'|' -f4)
+}
+
 _runtime_calc(){
 	set +e
 	case $1 in
@@ -58,15 +65,13 @@ _runtime_calc(){
 }
 
 compile_static_lib(){
-	if [ "$1" = "" ]; then
+	if [ "$srcdir" = "" ]; then
 		srcdir="src"
-	else
-		srcdir="$1"
 	fi
 	mkdir obj -p
 
 	for i in $src; do
-		_compile_obj $srcdir/$i "static"
+		_compile_obj $srcdir/$i.c "static"
 	done
 	printf "Creating static library $1..."
 	$AR rc lib$libname.a $(find obj | grep static) 2>&1 >/dev/null
@@ -74,15 +79,13 @@ compile_static_lib(){
 }
 
 compile_shared_lib(){
-	if [ "$1" = "" ]; then
+	if [ "$srcdir" = "" ]; then
 		srcdir="src"
-	else
-		srcdir="$1"
 	fi
 	mkdir obj -p
 
 	for i in $src; do
-		_compile_obj $srcdir/$i "shared"
+		_compile_obj $srcdir/$i.c "shared"
 	done
 	printf "Creating shared library $1..."
 	$CC -shared $(find obj | grep shared) -o lib$libname.so $CFLAGS $LDFLAGS
@@ -102,18 +105,18 @@ compile_lib(){
 }
 
 install_lib(){
-	printf "Installing library $LIBNAME..."
+	printf "Installing library $libname..."
 	for i in $(ls include | grep ".h"); do
 		cp include/$i "$prefix/include"
 	done
-	mv libpl32.* "$prefix/lib"
+	mv lib$libname.* "$prefix/lib"
 	echo "Done."
 }
 
-printf "PocketLinux32's Generic C Library Build System v0.05\n\n"
+printf "PocketLinux32's Generic C Library Build System v0.07\n\n"
 
 case $1 in
-	--clean)
+	clean)
 		rm obj *.out *.a *.so core* -rf
 		if [ "$2" = "fully" ]; then
 			rm .config
@@ -121,16 +124,16 @@ case $1 in
 		echo "Project directory has been cleaned"
 		exit 0
 		;;
-	--build)
+	build)
 		action="compile_$2"
 		;;
-	--install)
+	install)
 		action="install_lib"
 		;;
-	--help)
-		echo "--clean			Removes any files generated during compilation"
-		echo "--build [action]	Compiles the library or the library testcase"
-		echo "--install		Installs the compiled library to dest"
+	help)
+		echo "clean			Removes any files generated during compilation"
+		echo "build [action]	Compiles the library or the library testcase"
+		echo "install		Installs the compiled library to dest"
 		exit 0
 		;;
 esac
@@ -146,6 +149,7 @@ echo "Compiler Flags: $CFLAGS"
 printf "Linker Flags: $LDFLAGS\n\n"
 
 _runtime_calc start
+_parse_projectstruct $main_project
 $action
 _runtime_calc stop
 
