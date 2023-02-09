@@ -13,7 +13,7 @@ int main(){
 	plTermChangeColor(0);
 	plTermMovePrint(thingie, (thingieSize[0] / 2) - 24, thingieSize[1] / 2, "this is the size of the tewminaw uwu: ");
 
-	char buffer[12] = "";
+	byte_t buffer[12] = "";
 	snprintf(buffer, 12, "%zux%zu", thingieSize[0], thingieSize[1]);
 	plTermPrint(thingie, buffer);
 
