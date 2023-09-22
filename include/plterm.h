@@ -1,12 +1,17 @@
 /**************************************\
- pltermlib, v0.02
+ pltermlib, v0.03
  (c) 2023 pocketlinux32, Under MPL v2.0
  plterm.h: Main header file
 \**************************************/
 #pragma once
-#include <pl32.h>
+#include <plrt.h>
 #include <unistd.h>
 #include <termios.h>
+
+#define PLTERM_VERSION "0.03"
+#define PLTERM_API_VER 0
+#define PLTERM_FEATURELVL 3
+#define PLTERM_PATCHLVL 0
 
 #define PLTERM_KEY_UP 248
 #define PLTERM_KEY_DOWN 249
@@ -39,12 +44,15 @@
 typedef struct plterm plterm_t;
 
 void plTermGetAttrib(memptr_t buf, int attrib, plterm_t* termStruct);
-byte_t* plTermGetInput(plterm_t* termStruct);
+plchar_t plTermGetInput(plterm_t* termStruct);
+
 void plTermMove(plterm_t* termStruct, uint16_t x, uint16_t y);
 void plTermRelMove(plterm_t* termStruct, int x, int y);
 int plTermChangeColor(uint8_t color);
-void plTermPrint(plterm_t* termStruct, string_t string);
-void plTermMovePrint(plterm_t* termStruct, uint16_t x, uint16_t y, string_t string);
+void plTermPrint(plterm_t* termStruct, plstring_t string);
+void plTermMovePrint(plterm_t* termStruct, uint16_t x, uint16_t y, plstring_t string);
+
 void plTermFillArea(plterm_t* termStruct, uint8_t color, uint16_t xStart, uint16_t yStart, uint16_t xStop, uint16_t yStop);
-plterm_t* plTermInit(plmt_t* mt);
+
+plterm_t* plTermInit(plmt_t* mt, bool nonblockInput);
 void plTermStop(plterm_t* termStruct);

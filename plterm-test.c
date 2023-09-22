@@ -3,26 +3,26 @@
 
 int main(){
 	plmt_t* mt = plMTInit(0);
-	plterm_t* thingie = plTermInit(mt);
+	plterm_t* thingie = plTermInit(mt, false);
 
 	size_t thingieSize[2];
 	plTermGetAttrib(thingieSize, PLTERM_SIZE, thingie);
 
-	pltermdiag_t* thingieDiag = plTermUIDialogBoxInit(thingie, 52, 3, (thingieSize[0] / 2) - 26, thingieSize[1] / 2);
+//	pltermdiag_t* thingieDiag = plTermUIDiagBoxInit(thingie, 52, 3, (thingieSize[0] / 2) - 26, thingieSize[1] / 2, true);
 
-	plTermUISetBackgroundColor(thingie, PLTERM_FONT_BCOL_MAGENTA);
-	plTermUIPrintHeader(thingie, "hewwo uwu", PLTERM_FONT_BCOL_WHITE, 1, (thingieSize[0] / 2) - 4);
-	plTermUIPrintHeader(thingie, "pwess any key to exit uwu", PLTERM_FONT_BCOL_WHITE, thingieSize[1], (thingieSize[0] / 2) - 16);
+	plTermUISetBackground(thingie, PLTERM_FONT_BCOL_MAGENTA);
+//	plTermUIPrintHeader(thingie, plRTStrFromCStr("hewwo uwu", NULL), PLTERM_FONT_BCOL_WHITE, 1, (thingieSize[0] / 2) - 4);
+//	plTermUIPrintHeader(thingie, plRTStrFromCStr("pwess any key to exit uwu", NULL), PLTERM_FONT_BCOL_WHITE, thingieSize[1], (thingieSize[0] / 2) - 16);
 
-	plTermUIDiagSetBackgroundColor(thingieDiag, PLTERM_FONT_BCOL_WHITE, true);
-	plTermChangeColor(PLTERM_FONT_FCOL_BLACK);
-	plTermUIDiagMovePrint(thingieDiag, 1, 1, "this is the size of the tewminaw uwu: ");
+//	plTermUIDiagRender(thingieDiag, PLTERM_FONT_BCOL_WHITE);
+//	plTermChangeColor(PLTERM_FONT_FCOL_BLACK);
+//	plTermUIDiagMovePrint(thingieDiag, 1, 1, plRTStrFromCStr("this is the size of the tewminaw uwu: ", NULL));
 
 	char buffer[12] = "";
 	snprintf(buffer, 12, "%zux%zu", thingieSize[0], thingieSize[1]);
-	plTermPrint(thingie, buffer);
+	plTermPrint(thingie, plRTStrFromCStr(buffer, NULL));
 
-	plMTFree(mt, plTermGetInput(thingie));
+	plTermGetInput(thingie);
 
 	plTermStop(thingie);
 	plMTStop(mt);
