@@ -8,9 +8,9 @@
 #include <unistd.h>
 #include <termios.h>
 
-#define PLTERM_VERSION "0.03"
+#define PLTERM_VERSION "0.04"
 #define PLTERM_API_VER 0
-#define PLTERM_FEATURELVL 3
+#define PLTERM_FEATURELVL 4
 #define PLTERM_PATCHLVL 0
 
 #define PLTERM_KEY_UP 248
@@ -20,6 +20,8 @@
 
 #define PLTERM_FONT_DEFAULT 0
 #define PLTERM_FONT_BOLD 1
+#define PLTERM_FONT_BLINKING 5
+#define PLTERM_FONT_REVERSED_COLOR 7
 #define PLTERM_FONT_FCOL_BLACK 30
 #define PLTERM_FONT_FCOL_RED 31
 #define PLTERM_FONT_FCOL_GREEN 32
