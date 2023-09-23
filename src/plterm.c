@@ -180,7 +180,7 @@ void plTermFillArea(plterm_t* termStruct, uint8_t color, uint16_t xStart, uint16
 	plTermMove(termStruct, termPos[0], termPos[1]);
 }
 
-plterm_t* plTermInit(plmt_t* mt){
+plterm_t* plTermInit(plmt_t* mt, bool nonblockInput){
 	plterm_t* retStruct = plMTAlloc(mt, sizeof(plterm_t));
 	struct termios* og = &(retStruct->original);
 	struct termios* cur = &(retStruct->current);
