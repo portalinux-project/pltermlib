@@ -10,7 +10,7 @@ struct plterm {
 	plmt_t* mt;
 };
 
-void plTermGetAttrib(memptr_t buf, int attrib, plterm_t* termStruct){
+void plTermGetAttrib(memptr_t buf, pltermaction_t attrib, plterm_t* termStruct){
 	switch(attrib){
 		case PLTERM_SIZE:
 			((size_t*)buf)[0] = termStruct->xSize;
@@ -121,7 +121,7 @@ void plTermRelMove(plterm_t* termStruct, int x, int y){
 	}
 }
 
-int plTermChangeColor(uint8_t color){
+int plTermChangeColor(pltermcolor_t color){
 	bool forecolorOutOfRange = color < 30 || color > 37;
 	bool backcolorOutOfRange = color < 40 || color > 47;
 	bool miscFontStyleOutOfRange = color > 1;
@@ -136,8 +136,16 @@ int plTermChangeColor(uint8_t color){
 }
 
 void plTermPrint(plterm_t* termStruct, plstring_t string){
+	if(string.data.pointer == NULL)
+		plRTPanic("plTermPrint", PLRT_ERROR | PLRT_NULL_PTR, true);
 	if(string.isplChar)
-		plRTPanic("plTermPrint", PLRT_ERROR | PLRT_NOT_COMPRESSED, false);
+		plRTPanic("plTermPrint", PLRT_ERROR | PLRT_NOT_COMPRESSED, true);
+
+	if(string.data.size == 0)
+		return;
+
+	if(termStruct->xPos + string.data.size > termStruct->xSize)
+		string.data.size -= (termStruct->xPos + string.data.size) - termStruct->xSize;
 
 	write(STDOUT_FILENO, string.data.pointer, string.data.size);
 
@@ -153,7 +161,7 @@ void plTermMovePrint(plterm_t* termStruct, uint16_t x, uint16_t y, plstring_t st
 	plTermPrint(termStruct, string);
 }
 
-void plTermFillArea(plterm_t* termStruct, uint8_t color, uint16_t xStart, uint16_t yStart, uint16_t xStop, uint16_t yStop){
+void plTermFillArea(plterm_t* termStruct, pltermcolor_t color, uint16_t xStart, uint16_t yStart, uint16_t xStop, uint16_t yStop){
 	size_t termPos[2] = {termStruct->xPos, termStruct->yPos};
 
 	if(xStart > termStruct->xSize)
