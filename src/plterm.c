@@ -144,7 +144,7 @@ void plTermPrint(plterm_t* termStruct, plstring_t string){
 	if(string.data.size == 0)
 		return;
 
-	if(termStruct->xPos + string.data.size > termStruct->xSize)
+	if(termStruct->xPos + string.data.size > termStruct->xSize + 1)
 		string.data.size -= (termStruct->xPos + string.data.size) - termStruct->xSize;
 
 	write(STDOUT_FILENO, string.data.pointer, string.data.size);
