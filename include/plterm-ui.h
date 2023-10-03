@@ -11,8 +11,14 @@ typedef enum pltdmenusel {
 	PLTERM_MENU_SEL_DOWN
 } pltdmenusel_t;
 
+typedef struct pltdmenuopt {
+	plstring_t title;
+	plstring_t subtitle;
+} pltdmenuopt_t;
+
 typedef struct pltermdiag pltermdiag_t;
 typedef struct pltdmenu pltdmenu_t;
+
 
 void plTermUISetBackground(plterm_t* termStruct, pltermcolor_t color);
 void plTermUIPrintHeader(plterm_t* termStruct, plstring_t string, pltermcolor_t color, uint16_t y, uint16_t textOffset);
@@ -28,4 +34,5 @@ pltdmenu_t* plTermUIDiagMenuCreate(pltermdiag_t* dialogBox, uint16_t xPadding, u
 void plTermUIDiagMenuStop(pltdmenu_t* menu);
 void plTermUIDiagMenuAddOption(pltdmenu_t* menu, plstring_t title, plstring_t subtitle);
 void plTermUIDiagMenuSelectOption(pltdmenu_t* menu, pltdmenusel_t selectAction);
+pltdmenuopt_t plTermUIDiagMenuGetSelectedOpt(pltdmenu_t* menu);
 void plTermUIDiagMenuRender(pltdmenu_t* menu);

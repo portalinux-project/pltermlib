@@ -20,11 +20,6 @@ _compile_obj(){
 		fi
 
 		$CC -c $extra_flag -Iinclude $1 -o obj/$basename-$2.o $CFLAGS
-		if [ "$libobj" = "" ]; then
-			libobj="obj/$basename-$2.o"
-		else
-			libobj="$libobj obj/$basename-$2.o"
-		fi
 		echo "Done."
 	fi
 }
@@ -93,7 +88,13 @@ compile_static_lib(){
 
 	for i in $libsrc; do
 		_compile_obj $srcdir/$i.c "static"
+		if [ "$libobj" = "" ]; then
+			libobj="obj/$(basename $i)-static.o"
+		else
+			libobj="$libobj obj/$(basename $i)-static.o"
+		fi
 	done
+
 	printf "Creating static library $libname..."
 	$AR rc lib$libname.a $libobj 2>&1 >/dev/null
 	libobj=""
@@ -105,7 +106,13 @@ compile_shared_lib(){
 
 	for i in $libsrc; do
 		_compile_obj $srcdir/$i.c "shared"
+		if [ "$libobj" = "" ]; then
+			libobj="obj/$(basename $i)-shared.o"
+		else
+			libobj="$libobj obj/$(basename $i)-shared.o"
+		fi
 	done
+
 	printf "Creating shared library $libname..."
 	$CC -shared $libobj -o lib$libname.so $CFLAGS $LDFLAGS
 	libobj=""

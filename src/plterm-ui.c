@@ -14,16 +14,12 @@ struct pltermdiag {
 	bool drawShadow;
 };
 
-typedef struct pltdmenuopt {
-	plstring_t title;
-	plstring_t subtitle;
-} pltdmenuopt_t;
-
 struct pltdmenu {
 	pltermdiag_t* dialogBox;
 	plptr_t menuEntries;
 	uint16_t selectedEntry;
 	uint16_t padding[2];
+	bool stringsPadded;
 };
 
 void plTermUISetBackground(plterm_t* termStruct, pltermcolor_t color){
@@ -40,7 +36,9 @@ void plTermUIPrintHeader(plterm_t* termStruct, plstring_t string, pltermcolor_t 
 	plTermGetAttrib(terminalSize, PLTERM_SIZE, termStruct);
 	plTermFillArea(termStruct, color, 1, y, terminalSize[0], y);
 
-	plTermChangeColor(PLTERM_FONT_FCOL_BLACK);
+	if(color > 7 && color != PLTERM_FONT_BCOL_BLACK){
+		plTermChangeColor(PLTERM_FONT_FCOL_BLACK);
+	}
 	plTermMovePrint(termStruct, textOffset, y, string);
 	plTermChangeColor(PLTERM_FONT_DEFAULT);
 }
@@ -114,11 +112,21 @@ pltdmenu_t* plTermUIDiagMenuCreate(pltermdiag_t* dialogBox, uint16_t xPadding, u
 	retStruct->menuEntries.pointer = plMTAlloc(mt, 2 * sizeof(pltdmenuopt_t));
 	retStruct->menuEntries.size = 0;
 	retStruct->selectedEntry = 0;
+
+	return retStruct;
 }
 
 void plTermUIDiagMenuStop(pltdmenu_t* menu){
 	plmt_t* mt;
 	plTermGetAttrib(&mt, PLTERM_MT, menu->dialogBox->terminal);
+
+	if(menu->menuEntries.size != 0){
+		for(int i = 0; i < menu->menuEntries.size; i++){
+			pltdmenuopt_t* menuEntries = menu->menuEntries.pointer;
+			plMTFree(mt, menuEntries[menu->menuEntries.size].title.data.pointer);
+			plMTFree(mt, menuEntries[menu->menuEntries.size].subtitle.data.pointer);
+		}
+	}
 
 	plTermUIDiagBoxStop(menu->dialogBox);
 	plMTFree(mt, menu);
@@ -140,23 +148,89 @@ void plTermUIDiagMenuAddOption(pltdmenu_t* menu, plstring_t title, plstring_t su
 	}
 
 	pltdmenuopt_t* menuEntries = menu->menuEntries.pointer;
+
 	menuEntries[menu->menuEntries.size].title = title;
 	menuEntries[menu->menuEntries.size].subtitle = subtitle;
 
 	menu->menuEntries.size++;
+	menu->stringsPadded = false;
 }
 
 void plTermUIDiagMenuSelectOption(pltdmenu_t* menu, pltdmenusel_t selectAction){
-	if(selectAction == PLTERM_MENU_SEL_UP && menu->selectedEntry < menu->menuEntries.size - 1)
+	if(selectAction == PLTERM_MENU_SEL_DOWN && menu->selectedEntry < menu->menuEntries.size - 1)
 		menu->selectedEntry++;
-	else if(selectAction == PLTERM_MENU_SEL_DOWN && menu->selectedEntry != 0)
+	else if(selectAction == PLTERM_MENU_SEL_UP && menu->selectedEntry != 0)
 		menu->selectedEntry--;
 }
 
+void plTermUIDiagMenuPadStr(pltdmenu_t* menu){
+	plmt_t* mt;
+	plTermGetAttrib(&mt, PLTERM_MT, menu->dialogBox->terminal);
+
+	pltdmenuopt_t* menuEntries = menu->menuEntries.pointer;
+	size_t menuEntriesSize = menu->menuEntries.size;
+	size_t stringLength[2] = {0, 0};
+
+	for(int i = 0; i < menuEntriesSize; i++){
+		if(menuEntries[i].title.data.size > stringLength[0])
+			stringLength[0] = menuEntries[i].title.data.size;
+
+		if(menuEntries[i].subtitle.data.size > stringLength[1])
+			stringLength[1] = menuEntries[i].subtitle.data.size;
+	}
+
+	stringLength[0] += 1;
+	stringLength[1] += 1;
+
+	for(int i = 0; i < menuEntriesSize; i++){
+		memptr_t tempPtr = NULL;
+		if(menuEntries[i].title.mt == NULL)
+			tempPtr = plMTAlloc(mt, stringLength[0]);
+		else
+			tempPtr = plMTRealloc(mt, menuEntries[i].title.data.pointer, stringLength[0]);
+
+		if(tempPtr == NULL)
+			plRTPanic("plTermUIDiagMenuPadStr", PLRT_ERROR | PLRT_FAILED_ALLOC, true);
+
+		memcpy(tempPtr, menuEntries[i].title.data.pointer, menuEntries[i].title.data.size);
+		for(int j = menuEntries[i].title.data.size; j < stringLength[0]; j++)
+			((char*)tempPtr)[j] = ' ';
+
+		menuEntries[i].title.data.pointer = tempPtr;
+		menuEntries[i].title.data.size = stringLength[0];
+		menuEntries[i].title.mt = mt;
+
+		if(menuEntries[i].subtitle.mt == NULL)
+			tempPtr = plMTAlloc(mt, stringLength[1]);
+		else
+			tempPtr = plMTRealloc(mt, menuEntries[i].subtitle.data.pointer, stringLength[1]);
+
+		if(tempPtr == NULL)
+			plRTPanic("plTermUIDiagMenuPadStr", PLRT_ERROR | PLRT_FAILED_ALLOC, true);
+
+		memcpy(tempPtr, menuEntries[i].subtitle.data.pointer, menuEntries[i].subtitle.data.size);
+		for(int j = menuEntries[i].subtitle.data.size; j < stringLength[1]; j++)
+			((char*)tempPtr)[j] = ' ';
+
+		menuEntries[i].subtitle.data.pointer = tempPtr;
+		menuEntries[i].subtitle.data.size = stringLength[1];
+		menuEntries[i].subtitle.mt = mt;
+	}
+
+	menu->stringsPadded = true;
+}
+
+pltdmenuopt_t plTermUIDiagMenuGetSelectedOpt(pltdmenu_t* menu){
+	return ((pltdmenuopt_t*)menu->menuEntries.pointer)[menu->selectedEntry];
+}
+
 void plTermUIDiagMenuRender(pltdmenu_t* menu){
+	if(!menu->stringsPadded)
+		plTermUIDiagMenuPadStr(menu);
+
 	pltdmenuopt_t holderEntry;
 	for(int i = 0; i < menu->menuEntries.size; i++){
-		memcpy(&holderEntry, menu->menuEntries.pointer, sizeof(pltdmenuopt_t));
+		memcpy(&holderEntry, menu->menuEntries.pointer + (sizeof(pltdmenuopt_t) * i), sizeof(pltdmenuopt_t));
 		if(menu->padding[1] + i < menu->dialogBox->dimensions[1]){
 			if(i == menu->selectedEntry)
 				plTermChangeColor(PLTERM_FONT_REVERSED_COLOR);
@@ -166,6 +240,9 @@ void plTermUIDiagMenuRender(pltdmenu_t* menu){
 				plTermPrint(menu->dialogBox->terminal, plRTStrFromCStr("\t", NULL));
 				plTermPrint(menu->dialogBox->terminal, holderEntry.subtitle);
 			}
+
+			if(i == menu->selectedEntry)
+				plTermChangeColor(PLTERM_FONT_DEFAULT);
 		}
 	}
 }

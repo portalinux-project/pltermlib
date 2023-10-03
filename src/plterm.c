@@ -124,7 +124,7 @@ void plTermRelMove(plterm_t* termStruct, int x, int y){
 int plTermChangeColor(pltermcolor_t color){
 	bool forecolorOutOfRange = color < 30 || color > 37;
 	bool backcolorOutOfRange = color < 40 || color > 47;
-	bool miscFontStyleOutOfRange = color > 1;
+	bool miscFontStyleOutOfRange = color > 7;
 
 	if(forecolorOutOfRange && backcolorOutOfRange && miscFontStyleOutOfRange)
 		return 1;
@@ -204,13 +204,13 @@ plterm_t* plTermInit(plmt_t* mt, bool nonblockInput){
 	retStruct->xPos = 1;
 	retStruct->yPos = 1;
 	plTermUpdateSize(retStruct);
-	write(STDOUT_FILENO, "\x1b[2J\x1b[1;1H", 10);
+	write(STDOUT_FILENO, "\x1b[?25l\x1b[2J\x1b[1;1H", 16);
 	return retStruct;
 }
 
 void plTermStop(plterm_t* termStruct){
 	plTermChangeColor(PLTERM_FONT_DEFAULT);
-	plTermMovePrint(termStruct, 1, 1, plRTStrFromCStr("\x1b[0m\x1b[2J", NULL));
+	plTermMovePrint(termStruct, 1, 1, plRTStrFromCStr("\x1b[?25h\x1b[0m\x1b[2J", NULL));
 	tcsetattr(STDIN_FILENO, 0, &(termStruct->original));
 	tcsetattr(STDOUT_FILENO, 0, &(termStruct->original));
 
