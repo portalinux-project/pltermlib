@@ -1,5 +1,5 @@
 /**************************************\
- pltermlib, v0.03
+ pltermlib, v0.05
  (c) 2023 pocketlinux32, Under MPL v2.0
  plterm.h: Main header file
 \**************************************/
@@ -8,9 +8,9 @@
 #include <unistd.h>
 #include <termios.h>
 
-#define PLTERM_VERSION "0.04"
+#define PLTERM_VERSION "0.05"
 #define PLTERM_API_VER 0
-#define PLTERM_FEATURELVL 4
+#define PLTERM_FEATURELVL 5
 #define PLTERM_PATCHLVL 0
 
 typedef enum pltermkey {
@@ -52,6 +52,8 @@ typedef enum pltermaction {
 typedef struct plterm plterm_t;
 
 void plTermGetAttrib(memptr_t buf, pltermaction_t attrib, plterm_t* termStruct);
+void plTermToggleCursor(plterm_t* termStruct);
+void plTermClearScreen(plterm_t* termStruct);
 plchar_t plTermGetInput(plterm_t* termStruct);
 
 void plTermMove(plterm_t* termStruct, uint16_t x, uint16_t y);

@@ -1,24 +1,28 @@
 #include <plterm.h>
 
+typedef struct simpleCoord {
+	uint16_t x;
+	uint16_t y;
+} pltermsc_t;
+
 struct plterm {
 	struct termios original;
 	struct termios current;
-	uint16_t xSize;
-	uint16_t ySize;
-	uint16_t xPos;
-	uint16_t yPos;
+	pltermsc_t size;
+	pltermsc_t pos;
+	bool displayCursor;
 	plmt_t* mt;
 };
 
 void plTermGetAttrib(memptr_t buf, pltermaction_t attrib, plterm_t* termStruct){
 	switch(attrib){
 		case PLTERM_SIZE:
-			((size_t*)buf)[0] = termStruct->xSize;
-			((size_t*)buf)[1] = termStruct->ySize;
+			((size_t*)buf)[0] = termStruct->size.x;
+			((size_t*)buf)[1] = termStruct->size.y;
 			break;
 		case PLTERM_POS:
-			((size_t*)buf)[0] = termStruct->xPos;
-			((size_t*)buf)[1] = termStruct->yPos;
+			((size_t*)buf)[0] = termStruct->pos.x;
+			((size_t*)buf)[1] = termStruct->pos.y;
 			break;
 		case PLTERM_MT:
 			*((plmt_t**)buf) = termStruct->mt;
@@ -26,9 +30,28 @@ void plTermGetAttrib(memptr_t buf, pltermaction_t attrib, plterm_t* termStruct){
 	}
 }
 
-void plTermUpdateSize(plterm_t* termStruct){
+void plTermToggleCursor(plterm_t* termStruct){
+	char commandConstant[6] = "\x1b[?25";
+	if(termStruct->displayCursor){
+		commandConstant[5] = 'l';
+		termStruct->displayCursor = false;
+	}else{
+		commandConstant[5] = 'h';
+		termStruct->displayCursor = true;
+	}
+
+	write(STDOUT_FILENO, commandConstant, 6);
+}
+
+void plTermClearScreen(plterm_t* termStruct){
+	termStruct->pos.x = 1;
+	termStruct->pos.y = 1;
+	write(STDOUT_FILENO, "\x1b[2J\x1b[1;1H", 10);
+}
+
+pltermsc_t plTermGetPosition(plterm_t* termStruct){
 	char tempBuf[16] = "";
-	write(STDOUT_FILENO, "\x1b[9999;9999H\0", 13);
+	pltermsc_t retPos;
 	write(STDOUT_FILENO, "\x1b[6n\0", 5);
 	ssize_t offset = read(STDIN_FILENO, tempBuf, 16);
 	if(offset < 0){
@@ -46,13 +69,20 @@ void plTermUpdateSize(plterm_t* termStruct){
 
 	memcpy(secondTempBuf, startPos, midPos - startPos);
 	secondTempBuf[midPos - startPos + 1] = '\0';
-	termStruct->ySize = strtol(secondTempBuf, &junk, 10);
+	retPos.y = strtol(secondTempBuf, &junk, 10);
 
 	memcpy(secondTempBuf, midPos + 1, endPos - (midPos + 1));
 	secondTempBuf[endPos - (midPos + 1)] = '\0';
-	termStruct->xSize = strtol(secondTempBuf, &junk, 10);
+	retPos.x = strtol(secondTempBuf, &junk, 10);
 
-	snprintf(tempBuf, 16, "\x1b[%d;%dH", termStruct->xPos, termStruct->yPos);
+	return retPos;
+}
+
+void plTermUpdateSize(plterm_t* termStruct){
+	char tempBuf[16] = "";
+	write(STDOUT_FILENO, "\x1b[9999;9999H\0", 13);
+	termStruct->size = plTermGetPosition(termStruct);
+	snprintf(tempBuf, 16, "\x1b[%d;%dH", termStruct->pos.x, termStruct->pos.y);
 	write(STDOUT_FILENO, tempBuf, 16);
 }
 
@@ -95,8 +125,8 @@ void plTermMove(plterm_t* termStruct, uint16_t x, uint16_t y){
 	char tempStr[16] = "";
 	snprintf(tempStr, 16, "\x1b[%d;%dH", y, x);
 	write(STDOUT_FILENO, tempStr, strlen(tempStr));
-	termStruct->xPos = x;
-	termStruct->yPos = y;
+	termStruct->pos.x = x;
+	termStruct->pos.y = y;
 }
 
 void plTermRelMove(plterm_t* termStruct, int x, int y){
@@ -108,7 +138,7 @@ void plTermRelMove(plterm_t* termStruct, int x, int y){
 		else
 			snprintf(tempStr, 8, "\x1b[%dD", x);
 		write(STDOUT_FILENO, tempStr, strlen(tempStr));
-		termStruct->xPos += x;
+		termStruct->pos.x += x;
 	}
 
 	if(y != 0){
@@ -117,7 +147,7 @@ void plTermRelMove(plterm_t* termStruct, int x, int y){
 		else
 			snprintf(tempStr, 8, "\x1b[%dB", y);
 		write(STDOUT_FILENO, tempStr, strlen(tempStr));
-		termStruct->yPos += y;
+		termStruct->pos.y += y;
 	}
 }
 
@@ -144,15 +174,15 @@ void plTermPrint(plterm_t* termStruct, plstring_t string){
 	if(string.data.size == 0)
 		return;
 
-	if(termStruct->xPos + string.data.size > termStruct->xSize + 1)
-		string.data.size -= (termStruct->xPos + string.data.size) - termStruct->xSize;
+	if(termStruct->pos.x + string.data.size > termStruct->size.x + 1)
+		string.data.size -= (termStruct->pos.x + string.data.size) - termStruct->size.x;
 
 	write(STDOUT_FILENO, string.data.pointer, string.data.size);
 
-	termStruct->xPos += string.data.size;
-	if(termStruct->xPos > termStruct->xSize){
-		termStruct->xPos -= termStruct->xSize;
-		termStruct->yPos++;
+	termStruct->pos.x += string.data.size;
+	if(termStruct->pos.x > termStruct->size.x){
+		termStruct->pos.x -= termStruct->size.x;
+		termStruct->pos.y++;
 	}
 }
 
@@ -162,26 +192,26 @@ void plTermMovePrint(plterm_t* termStruct, uint16_t x, uint16_t y, plstring_t st
 }
 
 void plTermFillArea(plterm_t* termStruct, pltermcolor_t color, uint16_t xStart, uint16_t yStart, uint16_t xStop, uint16_t yStop){
-	size_t termPos[2] = {termStruct->xPos, termStruct->yPos};
+	size_t termPos[2] = {termStruct->pos.x, termStruct->pos.y};
 
-	if(xStart > termStruct->xSize)
-		xStart = termStruct->xSize - 1;
-	if(yStart > termStruct->ySize)
-		yStart = termStruct->ySize - 1;
-	if(xStop > termStruct->xSize)
-		xStop = termStruct->xSize;
-	if(yStop > termStruct->ySize)
-		yStop = termStruct->ySize;
+	if(xStart > termStruct->size.x)
+		xStart = termStruct->size.x - 1;
+	if(yStart > termStruct->size.y)
+		yStart = termStruct->size.y - 1;
+	if(xStop > termStruct->size.x)
+		xStop = termStruct->size.x;
+	if(yStop > termStruct->size.y)
+		yStop = termStruct->size.y;
 
 	plTermChangeColor(color);
 	plTermMove(termStruct, xStart, yStart);
 	while(yStart <= yStop){
-		while(termStruct->xPos < xStop)
+		while(termStruct->pos.x < xStop)
 			plTermPrint(termStruct, plRTStrFromCStr(" ", NULL));
 		plTermPrint(termStruct, plRTStrFromCStr(" ", NULL));
 
-		if(termStruct->yPos == yStart)
-			plTermMove(termStruct, xStart, termStruct->yPos + 1);
+		if(termStruct->pos.y == yStart)
+			plTermMove(termStruct, xStart, termStruct->pos.y + 1);
 		yStart++;
 	}
 
@@ -199,18 +229,20 @@ plterm_t* plTermInit(plmt_t* mt, bool nonblockInput){
 	cur->c_cc[VMIN] = 1;
 	cur->c_cc[VTIME] = 0;
 	tcsetattr(STDIN_FILENO, TCSANOW, cur);
+	if(nonblockInput)
+		fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL) | O_NONBLOCK);
 
 	retStruct->mt = mt;
-	retStruct->xPos = 1;
-	retStruct->yPos = 1;
+	retStruct->pos = plTermGetPosition(retStruct);
+	retStruct->displayCursor = true;
 	plTermUpdateSize(retStruct);
-	write(STDOUT_FILENO, "\x1b[?25l\x1b[2J\x1b[1;1H", 16);
 	return retStruct;
 }
 
 void plTermStop(plterm_t* termStruct){
 	plTermChangeColor(PLTERM_FONT_DEFAULT);
-	plTermMovePrint(termStruct, 1, 1, plRTStrFromCStr("\x1b[?25h\x1b[0m\x1b[2J", NULL));
+	write(STDOUT_FILENO, "\x1b[?25h", 6);
+	plTermMove(termStruct, 1, termStruct->pos.y);
 	tcsetattr(STDIN_FILENO, 0, &(termStruct->original));
 	tcsetattr(STDOUT_FILENO, 0, &(termStruct->original));
 

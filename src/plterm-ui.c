@@ -74,7 +74,8 @@ void plTermUIDiagRender(pltermdiag_t* dialogBox, pltermcolor_t color){
 	if(dialogBox->drawShadow)
 		plTermFillArea(dialogBox->terminal, PLTERM_FONT_BCOL_BLACK, dialogBox->position[0] + 1, dialogBox->position[1] + 1, dialogBox->position[0] + dialogBox->dimensions[0], dialogBox->position[1] + dialogBox->dimensions[1]);
 
-	plTermFillArea(dialogBox->terminal, color, dialogBox->position[0], dialogBox->position[1], dialogBox->position[0] + dialogBox->dimensions[0] - 1, dialogBox->position[1] + dialogBox->dimensions[1] - 1);
+	if(color != currentBColor)
+		plTermFillArea(dialogBox->terminal, color, dialogBox->position[0], dialogBox->position[1], dialogBox->position[0] + dialogBox->dimensions[0] - 1, dialogBox->position[1] + dialogBox->dimensions[1] - 1);
 }
 
 void plTermUIDiagMove(pltermdiag_t* dialogBox, uint16_t x, uint16_t y){

@@ -1,9 +1,15 @@
 #include <plterm.h>
 #include <plterm-ui.h>
 
+void signalHandler(int signal){
+	return;
+}
+
 int main(){
 	plmt_t* mt = plMTInit(0);
 	plterm_t* thingie = plTermInit(mt, false);
+	plTermClearScreen(thingie);
+	plTermToggleCursor(thingie);
 
 	size_t thingieSize[2];
 	plTermGetAttrib(thingieSize, PLTERM_SIZE, thingie);
@@ -25,6 +31,7 @@ int main(){
 	plTermGetInput(thingie);
 
 	plTermUIDiagBoxStop(thingieDiag);
+	plTermClearScreen(thingie);
 	plTermStop(thingie);
 	plMTStop(mt);
 	return 0;
