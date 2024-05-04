@@ -1,10 +1,10 @@
 /**************************************\
- pltermlib, v0.03
+ pltermlib, v1.00
  (c) 2023 pocketlinux32, Under MPL v2.0
  plterm-ui.h: UI header file
 \**************************************/
 #pragma once
-#include <plterm.h>
+#include <plterm-base.h>
 
 typedef enum pltdmenusel {
 	PLTERM_MENU_SEL_UP,
@@ -18,10 +18,6 @@ typedef struct pltdmenuopt {
 
 typedef struct pltermdiag pltermdiag_t;
 typedef struct pltdmenu pltdmenu_t;
-
-
-void plTermUISetBackground(plterm_t* termStruct, pltermcolor_t color);
-void plTermUIPrintHeader(plterm_t* termStruct, plstring_t string, pltermcolor_t color, uint16_t y, uint16_t textOffset);
 
 pltermdiag_t* plTermUIDiagBoxInit(plterm_t* termStruct, uint16_t width, uint16_t height, uint16_t x, uint16_t y, bool drawShadow);
 void plTermUIDiagBoxStop(pltermdiag_t* dialogBox);

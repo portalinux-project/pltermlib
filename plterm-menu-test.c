@@ -11,10 +11,10 @@ int main(int argc, const char* argv[]){
 	plTermClearScreen(thingie);
 	plTermToggleCursor(thingie);
 
-	size_t thingieSize[2];
-	plTermGetAttrib(thingieSize, PLTERM_SIZE, thingie);
+	pltermsc_t thingieSize;
+	plTermGetAttrib(&thingieSize, PLTERM_SIZE, thingie);
 
-	pltermdiag_t* thingieDiag = plTermUIDiagBoxInit(thingie, 72, 24, (thingieSize[0] / 2) - 35, (thingieSize[1] / 2) - 12, false);
+	pltermdiag_t* thingieDiag = plTermUIDiagBoxInit(thingie, 72, 24, (thingieSize.x / 2) - 35, (thingieSize.y / 2) - 12, false);
 	pltdmenu_t* thingieMenu = plTermUIDiagMenuCreate(thingieDiag, 3, 2);
 
 	plTermUIDiagMenuAddOption(thingieMenu, plRTStrFromCStr("option 1", NULL), plRTStrFromCStr("funny text", NULL));
@@ -22,7 +22,7 @@ int main(int argc, const char* argv[]){
 	plTermUIDiagMenuAddOption(thingieMenu, plRTStrFromCStr("option 3", NULL), plRTStrFromCStr("bottom text", NULL));
 	plTermUIDiagMenuAddOption(thingieMenu, plRTStrFromCStr("option 4", NULL), plRTStrFromCStr("bazinga", NULL));
 
-	plTermUIPrintHeader(thingie, plRTStrFromCStr("hewwo ^w^", NULL), PLTERM_FONT_REVERSED_COLOR, 1, (thingieSize[0] / 2) - 3);
+	plTermPrintHeader(thingie, plRTStrFromCStr("hewwo ^w^", NULL), PLTERM_FONT_REVERSED_COLOR, 1, (thingieSize.x / 2) - 3);
 	plTermUIDiagRender(thingieDiag, PLTERM_FONT_REVERSED_COLOR);
 	plTermUIDiagMenuRender(thingieMenu);
 

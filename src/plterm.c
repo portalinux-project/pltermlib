@@ -1,9 +1,4 @@
-#include <plterm.h>
-
-typedef struct simpleCoord {
-	uint16_t x;
-	uint16_t y;
-} pltermsc_t;
+#include <plterm-base.h>
 
 struct plterm {
 	struct termios original;
@@ -17,12 +12,10 @@ struct plterm {
 void plTermGetAttrib(memptr_t buf, pltermaction_t attrib, plterm_t* termStruct){
 	switch(attrib){
 		case PLTERM_SIZE:
-			((size_t*)buf)[0] = termStruct->size.x;
-			((size_t*)buf)[1] = termStruct->size.y;
+			*((pltermsc_t*)buf) = termStruct->size;
 			break;
 		case PLTERM_POS:
-			((size_t*)buf)[0] = termStruct->pos.x;
-			((size_t*)buf)[1] = termStruct->pos.y;
+			*((pltermsc_t*)buf) = termStruct->pos;
 			break;
 		case PLTERM_MT:
 			*((plmt_t**)buf) = termStruct->mt;
@@ -57,13 +50,13 @@ pltermsc_t plTermGetPosition(plterm_t* termStruct){
 	if(offset < 0){
 		tcsetattr(STDOUT_FILENO, 0, &(termStruct->original));
 		write(STDOUT_FILENO, "\r", 1);
-		perror("plTermUpdateSize");
+		perror("plTermGetPosition");
 		abort();
 	}
 
 	char* startPos = tempBuf + 2;
 	char* midPos = strchr(startPos, ';');
-	char* endPos = strchr(midPos, 'R');
+	char* endPos = strchr(startPos, 'R');
 	char secondTempBuf[5];
 	char* junk;
 
@@ -71,7 +64,7 @@ pltermsc_t plTermGetPosition(plterm_t* termStruct){
 	secondTempBuf[midPos - startPos + 1] = '\0';
 	retPos.y = strtol(secondTempBuf, &junk, 10);
 
-	memcpy(secondTempBuf, midPos + 1, endPos - (midPos + 1));
+	memcpy(secondTempBuf, midPos + 1, endPos - midPos);
 	secondTempBuf[endPos - (midPos + 1)] = '\0';
 	retPos.x = strtol(secondTempBuf, &junk, 10);
 
@@ -80,14 +73,14 @@ pltermsc_t plTermGetPosition(plterm_t* termStruct){
 
 void plTermUpdateSize(plterm_t* termStruct){
 	char tempBuf[16] = "";
-	write(STDOUT_FILENO, "\x1b[9999;9999H\0", 13);
+	write(STDOUT_FILENO, "\x1b[9999;9999H", 12);
 	termStruct->size = plTermGetPosition(termStruct);
-	snprintf(tempBuf, 16, "\x1b[%d;%dH", termStruct->pos.x, termStruct->pos.y);
+	snprintf(tempBuf, 16, "\x1b[%d;%dH", termStruct->pos.y, termStruct->pos.x);
 	write(STDOUT_FILENO, tempBuf, 16);
 }
 
 void plTermInputDriver(plchar_t* characterBuffer){
-	if(characterBuffer->bytes[0] == 27){
+	if(characterBuffer->bytes[0] == PLTERM_KEY_ESCAPE && characterBuffer->bytes[1] != 0){
 		switch(characterBuffer->bytes[2]){
 			case 'A':
 				characterBuffer->bytes[0] = PLTERM_KEY_UP;
@@ -109,7 +102,7 @@ void plTermInputDriver(plchar_t* characterBuffer){
 
 plchar_t plTermGetInput(plterm_t* termStruct){
 	plchar_t retVal = {
-		.bytes = {0, 0, 0, 0}
+			.bytes = {0, 0, 0, 0}
 	};
 	ssize_t offset = 0;
 
@@ -125,8 +118,15 @@ void plTermMove(plterm_t* termStruct, uint16_t x, uint16_t y){
 	char tempStr[16] = "";
 	snprintf(tempStr, 16, "\x1b[%d;%dH", y, x);
 	write(STDOUT_FILENO, tempStr, strlen(tempStr));
-	termStruct->pos.x = x;
-	termStruct->pos.y = y;
+	if(x == 0)
+		termStruct->pos.x = 1;
+	else
+		termStruct->pos.x = x;
+
+	if(y == 0)
+		termStruct->pos.y = 1;
+	else
+		termStruct->pos.y = y;
 }
 
 void plTermRelMove(plterm_t* termStruct, int x, int y){
@@ -134,11 +134,10 @@ void plTermRelMove(plterm_t* termStruct, int x, int y){
 
 	if(x != 0){
 		if(x < 0)
-			snprintf(tempStr, 8, "\x1b[%dC", -x);
+			snprintf(tempStr, 8, "\x1b[%dD", -x);
 		else
-			snprintf(tempStr, 8, "\x1b[%dD", x);
+			snprintf(tempStr, 8, "\x1b[%dC", x);
 		write(STDOUT_FILENO, tempStr, strlen(tempStr));
-		termStruct->pos.x += x;
 	}
 
 	if(y != 0){
@@ -147,8 +146,9 @@ void plTermRelMove(plterm_t* termStruct, int x, int y){
 		else
 			snprintf(tempStr, 8, "\x1b[%dB", y);
 		write(STDOUT_FILENO, tempStr, strlen(tempStr));
-		termStruct->pos.y += y;
 	}
+
+	termStruct->pos = plTermGetPosition(termStruct);
 }
 
 int plTermChangeColor(pltermcolor_t color){
@@ -174,15 +174,17 @@ void plTermPrint(plterm_t* termStruct, plstring_t string){
 	if(string.data.size == 0)
 		return;
 
-	if(termStruct->pos.x + string.data.size > termStruct->size.x + 1)
-		string.data.size -= (termStruct->pos.x + string.data.size) - termStruct->size.x;
-
 	write(STDOUT_FILENO, string.data.pointer, string.data.size);
 
-	termStruct->pos.x += string.data.size;
-	if(termStruct->pos.x > termStruct->size.x){
-		termStruct->pos.x -= termStruct->size.x;
-		termStruct->pos.y++;
+	plchar_t newline = { .bytes = { '\n', '\0', '\0', '\0' } };
+	if(plRTStrchr(string, newline, 0) == -1){
+		termStruct->pos.x += string.data.size;
+		if(termStruct->pos.x > termStruct->size.x){
+			termStruct->pos.x -= termStruct->size.x;
+			termStruct->pos.y++;
+		}
+	}else{
+		termStruct->pos = plTermGetPosition(termStruct);
 	}
 }
 
@@ -225,7 +227,9 @@ plterm_t* plTermInit(plmt_t* mt, bool nonblockInput){
 
 	tcgetattr(STDIN_FILENO, og);
 
-	cur->c_cflag &= ~(ICANON | ECHO);
+	cur->c_oflag |= ONLCR;
+	cur->c_iflag |= ICRNL;
+	cur->c_cflag |= CS8;
 	cur->c_cc[VMIN] = 1;
 	cur->c_cc[VTIME] = 0;
 	tcsetattr(STDIN_FILENO, TCSANOW, cur);

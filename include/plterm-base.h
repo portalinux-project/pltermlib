@@ -1,10 +1,6 @@
-/**************************************\
- pltermlib, v0.05
- (c) 2023 pocketlinux32, Under MPL v2.0
- plterm.h: Main header file
-\**************************************/
 #pragma once
 #include <plrt.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <termios.h>
 
@@ -14,10 +10,60 @@
 #define PLTERM_PATCHLVL 0
 
 typedef enum pltermkey {
+//	NONO_1 = 192,
+//	NONO_2 = 224,
+//	NONO_3 = 240,
+	PLTERM_KEY_F1 = 226,
+	PLTERM_KEY_F2 = 227,
+	PLTERM_KEY_F3 = 228,
+	PLTERM_KEY_F4 = 229,
+	PLTERM_KEY_F5 = 230,
+	PLTERM_KEY_F6 = 231,
+	PLTERM_KEY_F7 = 232,
+	PLTERM_KEY_F8 = 233,
+	PLTERM_KEY_F9 = 234,
+	PLTERM_KEY_F10 = 235,
+	PLTERM_KEY_F11 = 236,
+	PLTERM_KEY_F12 = 237,
+	PLTERM_KEY_INS = 242,
+	PLTERM_KEY_DEL = 243,
+	PLTERM_KEY_PGUP = 244,
+	PLTERM_KEY_PGDN = 245,
+	PLTERM_KEY_HOME = 246,
+	PLTERM_KEY_END = 247,
 	PLTERM_KEY_UP = 248,
 	PLTERM_KEY_DOWN = 249,
 	PLTERM_KEY_RIGHT = 250,
-	PLTERM_KEY_LEFT = 251
+	PLTERM_KEY_LEFT = 251,
+	PLTERM_KEY_ENTER = 10,
+	PLTERM_KEY_BACKSPACE = 8,
+	PLTERM_KEY_ESCAPE = 27,
+	PLTERM_KEY_CTRL_A = 1,
+	PLTERM_KEY_CTRL_B = 2,
+	PLTERM_KEY_CTRL_C = 3,
+	PLTERM_KEY_CTRL_D = 4,
+	PLTERM_KEY_CTRL_E = 5,
+	PLTERM_KEY_CTRL_F = 6,
+	PLTERM_KEY_CTRL_G = 7,
+	PLTERM_KEY_CTRL_H = 8,
+	PLTERM_KEY_CTRL_I = 9,
+	PLTERM_KEY_CTRL_J = 10,
+	PLTERM_KEY_CTRL_K = 11,
+	PLTERM_KEY_CTRL_L = 12,
+	PLTERM_KEY_CTRL_M = 13,
+	PLTERM_KEY_CTRL_N = 14,
+	PLTERM_KEY_CTRL_O = 15,
+	PLTERM_KEY_CTRL_P = 16,
+	PLTERM_KEY_CTRL_Q = 17,
+	PLTERM_KEY_CTRL_R = 18,
+	PLTERM_KEY_CTRL_S = 19,
+	PLTERM_KEY_CTRL_T = 20,
+	PLTERM_KEY_CTRL_U = 21,
+	PLTERM_KEY_CTRL_V = 22,
+	PLTERM_KEY_CTRL_W = 23,
+	PLTERM_KEY_CTRL_X = 24,
+	PLTERM_KEY_CTRL_Y = 25,
+	PLTERM_KEY_CTRL_Z = 26
 } pltermkey_t;
 
 typedef enum pltermcolor {
@@ -46,8 +92,13 @@ typedef enum pltermcolor {
 typedef enum pltermaction {
 	PLTERM_SIZE = 1,
 	PLTERM_POS = 2,
-	PLTERM_MT = 3,
+	PLTERM_MT = 3
 } pltermaction_t;
+
+typedef struct simpleCoord {
+	uint16_t x;
+	uint16_t y;
+} pltermsc_t;
 
 typedef struct plterm plterm_t;
 

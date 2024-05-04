@@ -1,11 +1,9 @@
 /**************************************\
- pltermlib, v0.03
+ pltermlib, v1.00
  (c) 2023 pocketlinux32, Under MPL v2.0
  plterm-ui.c: UI source file
 \**************************************/
 #include <plterm-ui.h>
-
-pltermcolor_t currentBColor = PLTERM_FONT_DEFAULT;
 
 struct pltermdiag {
 	plterm_t* terminal;
@@ -21,27 +19,6 @@ struct pltdmenu {
 	uint16_t padding[2];
 	bool stringsPadded;
 };
-
-void plTermUISetBackground(plterm_t* termStruct, pltermcolor_t color){
-	if(color < 40 && color > 47)
-		return;
-
-	size_t terminalSize[2];
-	plTermGetAttrib(terminalSize, PLTERM_SIZE, termStruct);
-	plTermFillArea(termStruct, color, 1, 1, terminalSize[0], terminalSize[1]);
-}
-
-void plTermUIPrintHeader(plterm_t* termStruct, plstring_t string, pltermcolor_t color, uint16_t y, uint16_t textOffset){
-	size_t terminalSize[2];
-	plTermGetAttrib(terminalSize, PLTERM_SIZE, termStruct);
-	plTermFillArea(termStruct, color, 1, y, terminalSize[0], y);
-
-	if(color > 7 && color != PLTERM_FONT_BCOL_BLACK){
-		plTermChangeColor(PLTERM_FONT_FCOL_BLACK);
-	}
-	plTermMovePrint(termStruct, textOffset, y, string);
-	plTermChangeColor(PLTERM_FONT_DEFAULT);
-}
 
 pltermdiag_t* plTermUIDiagBoxInit(plterm_t* termStruct, uint16_t width, uint16_t height, uint16_t x, uint16_t y, bool drawShadow){
 	plmt_t* mt;
@@ -66,7 +43,7 @@ void plTermUIDiagBoxStop(pltermdiag_t* dialogBox){
 
 	plmt_t* mt;
 	plTermGetAttrib(&mt, PLTERM_MT, dialogBox->terminal);
-	plTermFillArea(dialogBox->terminal, currentBColor, dialogBox->position[0], dialogBox->position[1], dialogBox->dimensions[0], dialogBox->dimensions[1]);
+	plTermFillArea(dialogBox->terminal, 0, dialogBox->position[0], dialogBox->position[1], dialogBox->dimensions[0], dialogBox->dimensions[1]);
 	plMTFree(mt, dialogBox);
 }
 
@@ -74,7 +51,7 @@ void plTermUIDiagRender(pltermdiag_t* dialogBox, pltermcolor_t color){
 	if(dialogBox->drawShadow)
 		plTermFillArea(dialogBox->terminal, PLTERM_FONT_BCOL_BLACK, dialogBox->position[0] + 1, dialogBox->position[1] + 1, dialogBox->position[0] + dialogBox->dimensions[0], dialogBox->position[1] + dialogBox->dimensions[1]);
 
-	if(color != currentBColor)
+	if(color != 0)
 		plTermFillArea(dialogBox->terminal, color, dialogBox->position[0], dialogBox->position[1], dialogBox->position[0] + dialogBox->dimensions[0] - 1, dialogBox->position[1] + dialogBox->dimensions[1] - 1);
 }
 
