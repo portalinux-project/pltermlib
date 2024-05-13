@@ -35,6 +35,63 @@ void plTermPrintHeader(plterm_t* termStruct, plstring_t string, pltermcolor_t co
 	plTermChangeColor(PLTERM_FONT_DEFAULT);
 }
 
+bool plTermIsNoise(plchar_t inputKey){
+	switch(inputKey.bytes[0]){
+		case PLTERM_KEY_F1:
+		case PLTERM_KEY_F2:
+		case PLTERM_KEY_F3:
+		case PLTERM_KEY_F4:
+		case PLTERM_KEY_F5:
+		case PLTERM_KEY_F6:
+		case PLTERM_KEY_F7:
+		case PLTERM_KEY_F8:
+		case PLTERM_KEY_F9:
+		case PLTERM_KEY_F10:
+		case PLTERM_KEY_F11:
+		case PLTERM_KEY_F12:
+		case PLTERM_KEY_INS:
+		case PLTERM_KEY_PGUP:
+		case PLTERM_KEY_PGDN:
+		case PLTERM_KEY_HOME:
+		case PLTERM_KEY_END:
+		case PLTERM_KEY_ENTER:
+		case PLTERM_KEY_UP:
+		case PLTERM_KEY_DOWN:
+		case PLTERM_KEY_LEFT:
+		case PLTERM_KEY_RIGHT:
+		case PLTERM_KEY_ESCAPE:
+		case PLTERM_KEY_CTRL_A:
+		case PLTERM_KEY_CTRL_B:
+		case PLTERM_KEY_CTRL_C:
+		case PLTERM_KEY_CTRL_D:
+		case PLTERM_KEY_CTRL_E:
+		case PLTERM_KEY_CTRL_F:
+		case PLTERM_KEY_CTRL_G:
+		case PLTERM_KEY_CTRL_H:
+		case PLTERM_KEY_CTRL_I:
+		case PLTERM_KEY_CTRL_J:
+		case PLTERM_KEY_CTRL_K:
+		case PLTERM_KEY_CTRL_L:
+		case PLTERM_KEY_CTRL_M:
+		case PLTERM_KEY_CTRL_N:
+		case PLTERM_KEY_CTRL_O:
+		case PLTERM_KEY_CTRL_P:
+		case PLTERM_KEY_CTRL_Q:
+		case PLTERM_KEY_CTRL_R:
+		case PLTERM_KEY_CTRL_S:
+		case PLTERM_KEY_CTRL_T:
+		case PLTERM_KEY_CTRL_U:
+		case PLTERM_KEY_CTRL_V:
+		case PLTERM_KEY_CTRL_W:
+		case PLTERM_KEY_CTRL_X:
+		case PLTERM_KEY_CTRL_Y:
+		case PLTERM_KEY_CTRL_Z:
+			return true;
+	}
+
+	return false;
+}
+
 pltermsc_t plTermTILeftRight(plterm_t* termStruct, plptr_t buffer, size_t* bufSeekbyte, plchar_t inputKey, uint16_t tabWidth){
 	pltermsc_t currentPos, terminalSize;
 	int16_t movementUnits = 1;
@@ -68,24 +125,41 @@ pltermsc_t plTermTILeftRight(plterm_t* termStruct, plptr_t buffer, size_t* bufSe
 }
 
 pltermsc_t plTermTIEditing(plterm_t* termStruct, plptr_t* buffer, size_t* bufSeekbyte, plchar_t inputKey, uint16_t tabWidth){
-	if(*bufSeekbyte + 1 < buffer->size)
-		memmove(buffer->pointer + *bufSeekbyte + 1, buffer->pointer + *bufSeekbyte, buffer->size - *bufSeekbyte);
-
-	((plchar_t*)buffer->pointer)[*bufSeekbyte] = inputKey;
-	buffer->size++;
+	if(inputKey.bytes[0] == PLTERM_KEY_BACKSPACE || inputKey.bytes[0] == PLTERM_KEY_DEL){
+		memmove(buffer->pointer + *bufSeekbyte, buffer->pointer + *bufSeekbyte + 1, buffer->size - *bufSeekbyte - 1);
+		buffer->size--;
+		if(inputKey.bytes[0] == PLTERM_KEY_BACKSPACE)
+			inputKey.bytes[0] = PLTERM_KEY_LEFT;
+	}else{
+		if(*bufSeekbyte + 1 < buffer->size){
+			memmove(buffer->pointer + *bufSeekbyte + 1, buffer->pointer + *bufSeekbyte, buffer->size - *bufSeekbyte);
+		((plchar_t*)buffer->pointer)[*bufSeekbyte] = inputKey;
+		buffer->size++;
+		inputKey.bytes[0] = PLTERM_KEY_RIGHT;
+	}
 
 	return plTermTILeftRight(termStruct, *buffer, bufSeekbyte, inputKey, tabWidth);
 }
 
-void plTermReadline(plterm_t* termStruct, plptr_t* buffer){
-	size_t bufferSizeLimit = buffer->size;
+void plTermReadline(plterm_t* termStruct, plstring_t* buffer, plstring_t prompt){
+	pltermsc_t currentPos;
+	size_t bufferSizeLimit = buffer->data.size;
 	size_t bufferSeekbyte = 0;
-	buffer->size = strlen(buffer->pointer);
+	if(!buffer->isplChar)
+		plRTPanic("plTermReadline", PLRT_ERROR | PLRT_NOT_PLCHAR, true);
 
-	bool directionalKey = false;
+	plTermPrint(termStruct, prompt);
+	plTermGetAttrib(&currentPos, PLTERM_POS, termStruct);
 	plchar_t inputKey = plTermGetInput(termStruct);
+
+	if(inputKey.bytes[0] == PLTERM_KEY_LEFT || inputKey.bytes[0] == PLTERM_KEY_RIGHT)
+		currentPos = plTermTILeftRight(termStruct, buffer->data, &bufferSeekbyte, inputKey, 8);
+	else if(!plTermIsNoise(inputKey))
+		currentPos = plTermTIEditing(termStruct, &buffer->data, &bufferSeekbyte, inputKey, 8);
+
+	
 }
 
 void plTermTextbox(plterm_t* termStruct, plptr_t* buffer){
-
+	//TODO: Implement textbox
 }
