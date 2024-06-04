@@ -4,7 +4,7 @@
  plterm-ui.h: UI header file
 \**************************************/
 #pragma once
-#include <plterm-base.h>
+#include <plterm-basic.h>
 
 typedef enum pltdmenusel {
 	PLTERM_MENU_SEL_UP,

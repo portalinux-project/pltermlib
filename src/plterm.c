@@ -1,4 +1,4 @@
-#include <plterm-base.h>
+#include <plterm-core.h>
 
 struct plterm {
 	struct termios original;
@@ -73,10 +73,19 @@ pltermsc_t plTermGetPosition(plterm_t* termStruct){
 
 void plTermUpdateSize(plterm_t* termStruct){
 	char tempBuf[16] = "";
+	bool toggleCursor = false;
+	if(termStruct->displayCursor){
+		plTermToggleCursor(termStruct);
+		toggleCursor = true;
+	}
+
 	write(STDOUT_FILENO, "\x1b[9999;9999H", 12);
 	termStruct->size = plTermGetPosition(termStruct);
 	snprintf(tempBuf, 16, "\x1b[%d;%dH", termStruct->pos.y, termStruct->pos.x);
 	write(STDOUT_FILENO, tempBuf, 16);
+
+	if(toggleCursor)
+		plTermToggleCursor(termStruct);
 }
 
 void plTermInputDriver(plchar_t* characterBuffer){
@@ -107,7 +116,7 @@ plchar_t plTermGetInput(plterm_t* termStruct){
 	ssize_t offset = 0;
 
 	offset = read(STDIN_FILENO, retVal.bytes, 4);
-	if(offset == 0)
+	if(offset <= 0)
 		return retVal;
 
 	plTermInputDriver(&retVal);
@@ -120,13 +129,17 @@ void plTermMove(plterm_t* termStruct, uint16_t x, uint16_t y){
 	write(STDOUT_FILENO, tempStr, strlen(tempStr));
 	if(x == 0)
 		termStruct->pos.x = 1;
-	else
+	else if(x < termStruct->size.x)
 		termStruct->pos.x = x;
+	else
+		termStruct->pos.x = termStruct->size.x;
 
 	if(y == 0)
 		termStruct->pos.y = 1;
-	else
+	else if(y < termStruct->size.y)
 		termStruct->pos.y = y;
+	else
+		termStruct->pos.y = termStruct->size.y;
 }
 
 void plTermRelMove(plterm_t* termStruct, int x, int y){
@@ -177,14 +190,36 @@ void plTermPrint(plterm_t* termStruct, plstring_t string){
 	write(STDOUT_FILENO, string.data.pointer, string.data.size);
 
 	plchar_t newline = { .bytes = { '\n', '\0', '\0', '\0' } };
-	if(plRTStrchr(string, newline, 0) == -1){
+	plchar_t tabChar = { .bytes = { '\t', '\0', '\0', '\0' } };
+	if(plRTStrchr(string, newline, 0) != -1 || plRTStrchr(string, tabChar, 0) != -1){
+		termStruct->pos = plTermGetPosition(termStruct);
+	}else{
 		termStruct->pos.x += string.data.size;
 		if(termStruct->pos.x > termStruct->size.x){
 			termStruct->pos.x -= termStruct->size.x;
 			termStruct->pos.y++;
 		}
-	}else{
+	}
+}
+
+void plTermPrintChar(plterm_t* termStruct, plchar_t chr){
+	size_t chrSize = 1;
+	if (chr.bytes[0] > 240)
+		chrSize = 4;
+	else if(chr.bytes[0] > 224)
+		chrSize = 3;
+	else if(chr.bytes[0] > 192)
+		chrSize = 2;
+
+	write(STDOUT_FILENO, chr.bytes, chrSize);
+	if(chr.bytes[0] == '\n' || chr.bytes[0] == '\t'){
 		termStruct->pos = plTermGetPosition(termStruct);
+	}else{
+		termStruct->pos.x++;
+		if(termStruct->pos.x > termStruct->size.x){
+			termStruct->pos.x = 1;
+			termStruct->pos.y++;
+		}
 	}
 }
 
@@ -227,9 +262,9 @@ plterm_t* plTermInit(plmt_t* mt, bool nonblockInput){
 
 	tcgetattr(STDIN_FILENO, og);
 
-	cur->c_oflag |= ONLCR;
-	cur->c_iflag |= ICRNL;
-	cur->c_cflag |= CS8;
+	cur->c_oflag = ONLCR;
+	cur->c_iflag = ICRNL;
+	cur->c_cflag = CS8;
 	cur->c_cc[VMIN] = 1;
 	cur->c_cc[VTIME] = 0;
 	tcsetattr(STDIN_FILENO, TCSANOW, cur);

@@ -10,31 +10,29 @@
 #define PLTERM_PATCHLVL 0
 
 typedef enum pltermkey {
-//	NONO_1 = 192,
-//	NONO_2 = 224,
-//	NONO_3 = 240,
-	PLTERM_KEY_F1 = 226,
-	PLTERM_KEY_F2 = 227,
-	PLTERM_KEY_F3 = 228,
-	PLTERM_KEY_F4 = 229,
-	PLTERM_KEY_F5 = 230,
-	PLTERM_KEY_F6 = 231,
-	PLTERM_KEY_F7 = 232,
-	PLTERM_KEY_F8 = 233,
-	PLTERM_KEY_F9 = 234,
-	PLTERM_KEY_F10 = 235,
-	PLTERM_KEY_F11 = 236,
-	PLTERM_KEY_F12 = 237,
-	PLTERM_KEY_INS = 242,
-	PLTERM_KEY_DEL = 243,
-	PLTERM_KEY_PGUP = 244,
-	PLTERM_KEY_PGDN = 245,
-	PLTERM_KEY_HOME = 246,
-	PLTERM_KEY_END = 247,
-	PLTERM_KEY_UP = 248,
-	PLTERM_KEY_DOWN = 249,
-	PLTERM_KEY_RIGHT = 250,
-	PLTERM_KEY_LEFT = 251,
+//	NONO_ABOVE_THIS = 192,
+	PLTERM_KEY_F1 = 128,
+	PLTERM_KEY_F2 = 129,
+	PLTERM_KEY_F3 = 130,
+	PLTERM_KEY_F4 = 131,
+	PLTERM_KEY_F5 = 132,
+	PLTERM_KEY_F6 = 133,
+	PLTERM_KEY_F7 = 134,
+	PLTERM_KEY_F8 = 135,
+	PLTERM_KEY_F9 = 136,
+	PLTERM_KEY_F10 = 137,
+	PLTERM_KEY_F11 = 138,
+	PLTERM_KEY_F12 = 139,
+	PLTERM_KEY_INS = 140,
+	PLTERM_KEY_DEL = 141,
+	PLTERM_KEY_PGUP = 142,
+	PLTERM_KEY_PGDN = 143,
+	PLTERM_KEY_HOME = 144,
+	PLTERM_KEY_END = 145,
+	PLTERM_KEY_UP = 146,
+	PLTERM_KEY_DOWN = 147,
+	PLTERM_KEY_RIGHT = 148,
+	PLTERM_KEY_LEFT = 149,
 	PLTERM_KEY_ENTER = 10,
 	PLTERM_KEY_BACKSPACE = 8,
 	PLTERM_KEY_ESCAPE = 27,
@@ -111,6 +109,7 @@ void plTermMove(plterm_t* termStruct, uint16_t x, uint16_t y);
 void plTermRelMove(plterm_t* termStruct, int x, int y);
 int plTermChangeColor(pltermcolor_t color);
 void plTermPrint(plterm_t* termStruct, plstring_t string);
+void plTermPrintChar(plterm_t* termStruct, plchar_t ch);
 void plTermMovePrint(plterm_t* termStruct, uint16_t x, uint16_t y, plstring_t string);
 
 void plTermFillArea(plterm_t* termStruct, pltermcolor_t color, uint16_t xStart, uint16_t yStart, uint16_t xStop, uint16_t yStop);
