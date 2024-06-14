@@ -61,7 +61,7 @@ pltermsc_t plTermGetPosition(plterm_t* termStruct){
 	char* junk;
 
 	memcpy(secondTempBuf, startPos, midPos - startPos);
-	secondTempBuf[midPos - startPos + 1] = '\0';
+	secondTempBuf[midPos - startPos] = '\0';
 	retPos.y = strtol(secondTempBuf, &junk, 10);
 
 	memcpy(secondTempBuf, midPos + 1, endPos - midPos);
