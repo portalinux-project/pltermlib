@@ -3,9 +3,12 @@
 struct plterm {
 	struct termios original;
 	struct termios current;
+	int inputFlags;
 	pltermsc_t size;
 	pltermsc_t pos;
 	bool displayCursor;
+	bool nonblockInput;
+	char extraChar;
 	plmt_t* mt;
 };
 
@@ -46,8 +49,8 @@ pltermsc_t plTermGetPosition(plterm_t* termStruct){
 	char tempBuf[16] = "";
 	pltermsc_t retPos;
 	write(STDOUT_FILENO, "\x1b[6n\0", 5);
-	ssize_t offset = read(STDIN_FILENO, tempBuf, 16);
-	if(offset < 0){
+	ssize_t bytesRead = read(STDIN_FILENO, tempBuf, 16);
+	if(bytesRead < 0){
 		tcsetattr(STDOUT_FILENO, 0, &(termStruct->original));
 		write(STDOUT_FILENO, "\r", 1);
 		perror("plTermGetPosition");
@@ -88,38 +91,69 @@ void plTermUpdateSize(plterm_t* termStruct){
 		plTermToggleCursor(termStruct);
 }
 
-void plTermInputDriver(plchar_t* characterBuffer){
-	if(characterBuffer->bytes[0] == PLTERM_KEY_ESCAPE && characterBuffer->bytes[1] != 0){
-		switch(characterBuffer->bytes[2]){
-			case 'A':
-				characterBuffer->bytes[0] = PLTERM_KEY_UP;
-				break;
-			case 'B':
-				characterBuffer->bytes[0] = PLTERM_KEY_DOWN;
-				break;
-			case 'C':
-				characterBuffer->bytes[0] = PLTERM_KEY_RIGHT;
-				break;
-			case 'D':
-				characterBuffer->bytes[0] = PLTERM_KEY_LEFT;
-				break;
+plchar_t plTermInputDriver(char* charBuf, plterm_t* termStruct){
+	plchar_t retVal = { .bytes = { charBuf[0], 0, 0, 0 } };
+	if(charBuf[0] == PLTERM_KEY_ESCAPE){
+		if(!termStruct->nonblockInput)
+			fcntl(STDIN_FILENO, F_SETFL, termStruct->inputFlags | O_NONBLOCK);
+
+		ssize_t bytesRead = read(STDIN_FILENO, charBuf + 1, 1);
+
+		if(charBuf[1] = '['){
+			int i = 2;
+			bool stopLoop = false;
+			while(!stopLoop){
+				bytesRead = read(STDIN_FILENO, charBuf + i, 1);
+				if(bytesRead < 0){
+					if(i == 2)
+						termStruct->extraChar = charBuf[1];
+					stopLoop = true;
+				}else{
+					i++;
+					if(i > 15)
+						stopLoop = true;
+				}
+			}
+
+			if(i > 2){
+				switch(charBuf[i - 1]){
+					case 'A':
+						retVal.bytes[0] = PLTERM_KEY_UP;
+						break;
+					case 'B':
+						retVal.bytes[0] = PLTERM_KEY_DOWN;
+						break;
+					case 'C':
+						retVal.bytes[0] = PLTERM_KEY_RIGHT;
+						break;
+					case 'D':
+						retVal.bytes[0] = PLTERM_KEY_LEFT;
+						break;
+					default:
+						retVal.bytes[0] = 0;
+				}
+			}
 		}
-		for(int i = 1; i < 4; i++)
-			characterBuffer->bytes[i] = 0;
+
+		if(!termStruct->nonblockInput)
+			fcntl(STDIN_FILENO, F_SETFL, termStruct->inputFlags);
 	}
+
+	return retVal;
 }
 
 plchar_t plTermGetInput(plterm_t* termStruct){
 	plchar_t retVal = {
 			.bytes = {0, 0, 0, 0}
 	};
-	ssize_t offset = 0;
+	ssize_t bytesRead = 0;
+	uint8_t workBuf[16] = "";
 
-	offset = read(STDIN_FILENO, retVal.bytes, 4);
-	if(offset <= 0)
+	bytesRead = read(STDIN_FILENO, workBuf, 1);
+	if(bytesRead == -1)
 		return retVal;
 
-	plTermInputDriver(&retVal);
+	retVal = plTermInputDriver(workBuf, termStruct);
 	return retVal;
 }
 
@@ -268,12 +302,15 @@ plterm_t* plTermInit(plmt_t* mt, bool nonblockInput){
 	cur->c_cc[VMIN] = 1;
 	cur->c_cc[VTIME] = 0;
 	tcsetattr(STDIN_FILENO, TCSANOW, cur);
+	retStruct->inputFlags = fcntl(STDIN_FILENO, F_GETFL);
 	if(nonblockInput)
-		fcntl(STDIN_FILENO, F_SETFL, fcntl(STDIN_FILENO, F_GETFL) | O_NONBLOCK);
+		fcntl(STDIN_FILENO, F_SETFL, retStruct->inputFlags | O_NONBLOCK);
 
 	retStruct->mt = mt;
 	retStruct->pos = plTermGetPosition(retStruct);
 	retStruct->displayCursor = true;
+	retStruct->nonblockInput = nonblockInput;
+	retStruct->extraChar;
 	plTermUpdateSize(retStruct);
 	return retStruct;
 }
@@ -282,6 +319,8 @@ void plTermStop(plterm_t* termStruct){
 	plTermChangeColor(PLTERM_FONT_DEFAULT);
 	write(STDOUT_FILENO, "\x1b[?25h", 6);
 	plTermMove(termStruct, 1, termStruct->pos.y);
+	if(termStruct->nonblockInput)
+		fcntl(STDIN_FILENO, F_SETFL, termStruct->inputFlags);
 	tcsetattr(STDIN_FILENO, 0, &(termStruct->original));
 	tcsetattr(STDOUT_FILENO, 0, &(termStruct->original));
 
