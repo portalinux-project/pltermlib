@@ -1,4 +1,5 @@
 #include <plterm-core.h>
+#include <errno.h>
 
 struct plterm {
 	struct termios original;
@@ -49,12 +50,25 @@ pltermsc_t plTermGetPosition(plterm_t* termStruct){
 	char tempBuf[16] = "";
 	pltermsc_t retPos;
 	write(STDOUT_FILENO, "\x1b[6n\0", 5);
-	ssize_t bytesRead = read(STDIN_FILENO, tempBuf, 16);
-	if(bytesRead < 0){
-		tcsetattr(STDOUT_FILENO, 0, &(termStruct->original));
-		write(STDOUT_FILENO, "\r", 1);
-		perror("plTermGetPosition");
-		abort();
+	while(tempBuf[0] != PLTERM_KEY_ESCAPE)
+		read(STDIN_FILENO, tempBuf, 1);
+
+	char endChar = 0;
+	int i = 2;
+	read(STDIN_FILENO, &endChar, 1);
+	if(endChar == '[')
+		tempBuf[1] = endChar;
+
+	while(endChar != 'R'){
+		if(endChar != '[' && tempBuf[1] == 0){
+			while(endChar != '[')
+				read(STDIN_FILENO, &endChar, 1);
+			tempBuf[1] = endChar;
+		}else{
+			read(STDIN_FILENO, &endChar, 1);
+			tempBuf[i] = endChar;
+			i++;
+		}
 	}
 
 	char* startPos = tempBuf + 2;
@@ -303,14 +317,22 @@ plterm_t* plTermInit(plmt_t* mt, bool nonblockInput){
 	cur->c_cc[VTIME] = 0;
 	tcsetattr(STDIN_FILENO, TCSANOW, cur);
 	retStruct->inputFlags = fcntl(STDIN_FILENO, F_GETFL);
-	if(nonblockInput)
-		fcntl(STDIN_FILENO, F_SETFL, retStruct->inputFlags | O_NONBLOCK);
+	fcntl(STDIN_FILENO, F_SETFL, retStruct->inputFlags | O_NONBLOCK);
 
 	retStruct->mt = mt;
 	retStruct->pos = plTermGetPosition(retStruct);
 	retStruct->displayCursor = true;
 	retStruct->nonblockInput = nonblockInput;
 	retStruct->extraChar;
+
+	char charBuf = 1;
+	ssize_t sizeThing = 0;
+	while(sizeThing > -1)
+		sizeThing = read(STDIN_FILENO, &charBuf, 1);
+
+	if(!nonblockInput)
+		fcntl(STDIN_FILENO, F_SETFL, retStruct->inputFlags);
+
 	plTermUpdateSize(retStruct);
 	return retStruct;
 }
