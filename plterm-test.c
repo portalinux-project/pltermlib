@@ -6,9 +6,6 @@ void signalHandler(int signal){
 }
 
 int main(){
-//	bool breakout = false;
-//	while(!breakout);
-
 	plmt_t* mt = plMTInit(0);
 	plterm_t* thingie = plTermInit(mt, false);
 	plTermClearScreen(thingie);
