@@ -1,10 +1,6 @@
 #include <plterm.h>
 #include <plterm-ui.h>
 
-void signalHandler(int signal){
-	return;
-}
-
 int main(int argc, const char* argv[]){
 	plmt_t* mt = plMTInit(8 * 1024 * 1024);
 	plterm_t* thingie = plTermInit(mt, true);

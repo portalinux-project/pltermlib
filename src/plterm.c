@@ -1,3 +1,9 @@
+/**************************************\
+ pltermlib, v1.00
+ (c) 2023 pocketlinux32, Under MPL v2.0
+ plterm.c: Core routines, source file
+\**************************************/
+#define PLRT_ENABLE_HANDLER
 #include <plterm-core.h>
 #include <errno.h>
 
@@ -113,7 +119,7 @@ plchar_t plTermInputDriver(char* charBuf, plterm_t* termStruct){
 
 		ssize_t bytesRead = read(STDIN_FILENO, charBuf + 1, 1);
 
-		if(charBuf[1] = '['){
+		if(charBuf[1] == '['){
 			int i = 2;
 			bool stopLoop = false;
 			while(!stopLoop){

@@ -3,6 +3,7 @@
  (c) 2023 pocketlinux32, Under MPL v2.0
  plterm-ui.c: UI source file
 \**************************************/
+#define PLRT_ENABLE_HANDLER
 #include <plterm-ui.h>
 
 struct pltermdiag {
