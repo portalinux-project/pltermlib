@@ -271,7 +271,19 @@ plchar_t plTermReadline(plterm_t* termStruct, pltibuf_t* bufferStruct, plstring_
 	return inputKey;
 }
 
-void plTermTextbox(plterm_t* termStruct, plptr_t* buffer){
-	//TODO: Implement textbox
-}
+plchar_t plTermReadscroll(plterm_t* termStruct, pltibuf_t* bufferStruct, ssize_t maxLength){
+	pltermsc_t currentPos;
+	pltermsc_t maxXPos;
+	size_t oldUsage = bufferStruct->currentUsage;
+	plmt_t* mt;
 
+	if(!bufferStruct->initialized){
+		if(!bufferStruct->buffer.isplChar)
+			plRTPanic("plTermReadline", PLRT_ERROR | PLRT_NOT_PLCHAR, true);
+
+		plTermGetAttrib(&bufferStruct->startPos, PLTERM_POS, termStruct);
+		bufferStruct->initialized = true;
+	}
+
+	//TODO: implement scrolling readline
+}
