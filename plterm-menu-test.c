@@ -3,7 +3,7 @@
 
 int main(int argc, const char* argv[]){
 	plmt_t* mt = plMTInit(8 * 1024 * 1024);
-	plterm_t* thingie = plTermInit(mt, true);
+	plterm_t* thingie = plTermInit(mt, false);
 	plTermClearScreen(thingie);
 	plTermToggleCursor(thingie);
 
@@ -23,7 +23,7 @@ int main(int argc, const char* argv[]){
 	plTermUIDiagMenuRender(thingieMenu);
 
 	plchar_t input = plTermGetInput(thingie);
-	while(input.bytes[0] != 13){
+	while(input.bytes[0] != PLTERM_KEY_ENTER){
 		switch(input.bytes[0]){
 			case PLTERM_KEY_UP:
 				plTermUIDiagMenuSelectOption(thingieMenu, PLTERM_MENU_SEL_UP);

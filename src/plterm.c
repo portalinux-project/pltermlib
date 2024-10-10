@@ -113,6 +113,12 @@ void plTermUpdateSize(plterm_t* termStruct){
 
 plchar_t plTermInputDriver(char* charBuf, plterm_t* termStruct){
 	plchar_t retVal = { .bytes = { charBuf[0], 0, 0, 0 } };
+	if(termStruct->extraChar != 0){
+		retVal.bytes[0] = termStruct->extraChar;
+		termStruct->extraChar = 0;
+		return retVal;
+	}
+
 	if(charBuf[0] == PLTERM_KEY_ESCAPE){
 		if(!termStruct->nonblockInput)
 			fcntl(STDIN_FILENO, F_SETFL, termStruct->inputFlags | O_NONBLOCK);
@@ -130,7 +136,7 @@ plchar_t plTermInputDriver(char* charBuf, plterm_t* termStruct){
 					stopLoop = true;
 				}else{
 					i++;
-					if(i > 15)
+					if(i > 15 || ((*(charBuf + i) >= 'A' && *(charBuf + i) <= 'Z') || (*(charBuf + i) >= 'a' && *(charBuf + i) <= 'z')))
 						stopLoop = true;
 				}
 			}
