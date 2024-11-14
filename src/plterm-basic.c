@@ -141,13 +141,14 @@ pltermsc_t plTermTIMakeRelative(pltermsc_t startOffset, pltermsc_t currentPos){
 }
 
 int16_t plTermTIDetermineTabMovLeft(pltibuf_t* bufferStruct, pltermsc_t currentPos){
-	pltermst_t textAreaSize = bufferStruct->maxPos;
-	pltermst_t relCurrentPos = currentPos;
-	pltermst_t relWorkPos = bufferStruct->startPos;
+	pltermsc_t textAreaSize = bufferStruct->maxPos;
+	pltermsc_t relCurrentPos = currentPos;
+	pltermsc_t relWorkPos = bufferStruct->startPos;
 	if(bufferStruct->textbox){
 		textAreaSize = plTermTIMakeRelative(bufferStruct->startPos, bufferStruct->maxPos);
 		relCurrentPos = plTermTIMakeRelative(bufferStruct->startPos, currentPos);
-		relWorkPos = { .x = 1, .y = 1 };
+		relWorkPos.x = 1;
+		relWorkPos.y = 1;
 	}
 
 	plchar_t* bufferArray = bufferStruct->buffer.data.pointer;
@@ -169,6 +170,8 @@ int16_t plTermTIDetermineTabMovLeft(pltibuf_t* bufferStruct, pltermsc_t currentP
 			relWorkPos.y++;
 			relWorkPos.x -= textAreaSize.x;
 		}
+
+		bufArrayOffset++;
 	}
 
 	workOffset = (relWorkPos.y * textAreaSize.x) + relWorkPos.x;
@@ -176,8 +179,8 @@ int16_t plTermTIDetermineTabMovLeft(pltibuf_t* bufferStruct, pltermsc_t currentP
 }
 
 int16_t plTermTIDetermineTabMovRight(pltibuf_t* bufferStruct, pltermsc_t currentPos){
-	pltermst_t textAreaSize = bufferStruct->maxPos;
-	pltermst_t relCurrentPos = currentPos;
+	pltermsc_t textAreaSize = bufferStruct->maxPos;
+	pltermsc_t relCurrentPos = currentPos;
 	if(bufferStruct->textbox){
 		textAreaSize = plTermTIMakeRelative(bufferStruct->startPos, bufferStruct->maxPos);
 		relCurrentPos = plTermTIMakeRelative(bufferStruct->startPos, currentPos);
@@ -186,12 +189,12 @@ int16_t plTermTIDetermineTabMovRight(pltibuf_t* bufferStruct, pltermsc_t current
 	return relCurrentPos.x + bufferStruct->tabWidth >= textAreaSize.x ? ((int16_t)textAreaSize.x - relCurrentPos.x) : ((int16_t)bufferStruct->tabWidth - (relCurrentPos.x % bufferStruct->tabWidth) + 1);
 }
 
-void plTermTIPrintChar(plterm_t* termStruct, plchar_t ch){
+void plTermTIPrintChar(plterm_t* termStruct, pltibuf_t* bufferStruct, plchar_t ch){
 	pltermsc_t currentPos;
 	plTermGetAttrib(&currentPos, PLTERM_POS, termStruct);
 	if(ch.bytes[0] == '\t'){
-		int16_t tabLength = plTermTIDetermineTabMovRight(termStruct, currentPos);
-		inputKey.bytes[0] = ' ';
+		int16_t tabLength = plTermTIDetermineTabMovRight(bufferStruct, currentPos);
+		ch.bytes[0] = ' ';
 		for(int i = 0; i < tabLength; i++)
 			plTermPrintChar(termStruct, ch);
 	}else{
@@ -208,8 +211,8 @@ pltermsc_t plTermTILeftRight(plterm_t* termStruct, pltibuf_t* bufferStruct, plch
 	plTermGetAttrib(&currentPos, PLTERM_POS, termStruct);
 
 	if(bufferStruct->offset > 0 && inputKey.bytes[0] == PLTERM_KEY_LEFT){
-		if((plchar_t*)bufferStruct->buffer.data.pointer)[bufferStruct->offset - 1].bytes[0] == '\t')
-			movementUnits = plTermDetermineTabMovLeft(bufferStruct, currentPos);
+		if(((plchar_t*)bufferStruct->buffer.data.pointer)[bufferStruct->offset - 1].bytes[0] == '\t')
+			movementUnits = plTermTIDetermineTabMovLeft(bufferStruct, currentPos);
 
 		if(currentPos.x - movementUnits <= startingPoint || currentPos.x - movementUnits > currentPos.x)
 			plTermMove(termStruct, bufferStruct->maxPos.x, currentPos.y - 1);
@@ -220,7 +223,7 @@ pltermsc_t plTermTILeftRight(plterm_t* termStruct, pltibuf_t* bufferStruct, plch
 			bufferStruct->offset--;
 	}else if(bufferStruct->offset + 1 < bufferStruct->currentUsage && inputKey.bytes[0] == PLTERM_KEY_RIGHT){
 		if(((plchar_t*)bufferStruct->buffer.data.pointer)[bufferStruct->offset].bytes[0] == '\t')
-			movementUnits = plTermDetermineTabMovRight(bufferStruct, currentPos);
+			movementUnits = plTermTIDetermineTabMovRight(bufferStruct, currentPos);
 
 		if(currentPos.x + movementUnits >= bufferStruct->maxPos.x)
 			plTermMove(termStruct, startingPoint, currentPos.y + 1);
@@ -245,7 +248,7 @@ pltermsc_t plTermTIRenderAction(plterm_t* termStruct, pltibuf_t* bufferStruct, p
 			plTermTILeftRight(termStruct, bufferStruct, inputKey, false);
 
 			inputKey.bytes[0] = ' ';
-			plTermTIPrintChar(termStruct, inputKey);
+			plTermTIPrintChar(termStruct, bufferStruct, inputKey);
 
 			inputKey.bytes[0] = PLTERM_KEY_LEFT;
 			currentPos = plTermTILeftRight(termStruct, bufferStruct, inputKey, true);
@@ -257,14 +260,14 @@ pltermsc_t plTermTIRenderAction(plterm_t* termStruct, pltibuf_t* bufferStruct, p
 			tempBuf.size = (bufferStruct->currentUsage - bufferStruct->offset);
 
 			for(int i = 0; i < tempBuf.size; i++)
-				plTermPrintChar(termStruct, ((plchar_t*)tempBuf.pointer)[i]);
+				plTermTIPrintChar(termStruct, bufferStruct, ((plchar_t*)tempBuf.pointer)[i]);
 
 			plchar_t space = { .bytes = { ' ', '\0', '\0', '\0' } };
-			plTermPrintChar(termStruct, space);
+			plTermTIPrintChar(termStruct, bufferStruct, space);
 			plTermMove(termStruct, currentPos.x, currentPos.y);
 			break;
 		default:
-			plTermTIPrintChar(termStruct, inputKey);
+			plTermTIPrintChar(termStruct, bufferStruct, inputKey);
 			plTermGetAttrib(&currentPos, PLTERM_POS, termStruct);
 	}
 
@@ -319,6 +322,8 @@ plchar_t plTermReadline(plterm_t* termStruct, pltibuf_t* bufferStruct, plstring_
 		plTermGetAttrib(&bufferStruct->startPos, PLTERM_POS, termStruct);
 		plTermGetAttrib(&bufferStruct->maxPos, PLTERM_SIZE, termStruct);
 		bufferStruct->initialized = true;
+		bufferStruct->tabWidth = 8;
+		bufferStruct->textbox = false;
 	}
 
 	plTermGetAttrib(&currentPos, PLTERM_POS, termStruct);
@@ -329,7 +334,7 @@ plchar_t plTermReadline(plterm_t* termStruct, pltibuf_t* bufferStruct, plstring_
 		currentPos = plTermTILeftRight(termStruct, bufferStruct, inputKey, true);
 	}else if((inputKey.bytes[0] == PLTERM_KEY_BACKSPACE || inputKey.bytes[0] == PLTERM_KEY_DEL) && bufferStruct->currentUsage > 1){
 		plTermTIDelete(termStruct, bufferStruct, inputKey);
-		if(inputKey.bytes[0] = PLTERM_KEY_DEL)
+		if(inputKey.bytes[0] == PLTERM_KEY_BACKSPACE && oldUsage != bufferStruct->currentUsage)
 			currentPos = plTermTIRenderAction(termStruct, bufferStruct, inputKey);
 	}else if(!plTermIsNoise(inputKey) && inputKey.bytes[0] != PLTERM_KEY_ENTER && bufferStruct->currentUsage < bufferStruct->buffer.data.size){
 		plTermTIInsert(termStruct, bufferStruct, inputKey);

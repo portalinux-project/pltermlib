@@ -136,7 +136,7 @@ plchar_t plTermInputDriver(char* charBuf, plterm_t* termStruct){
 					stopLoop = true;
 				}else{
 					i++;
-					if(i > 15 || ((*(charBuf + i) >= 'A' && *(charBuf + i) <= 'Z') || (*(charBuf + i) >= 'a' && *(charBuf + i) <= 'z')))
+					if(i > 15 || ((*(charBuf + i) >= 'A' && *(charBuf + i) <= 'Z') || (*(charBuf + i) >= 'a' && *(charBuf + i) <= 'z') || *(charBuf + i) == '~'))
 						stopLoop = true;
 				}
 			}
