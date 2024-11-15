@@ -13,6 +13,7 @@ typedef struct pltibuf {
 	pltermsc_t startPos;	// Starting position
 	pltermsc_t maxPos;	// Maximum position before scrolling/wrapping
 	uint16_t tabWidth;	// Width of tabs. Used for printing '\t' chars as well as determining how far to move the cursor
+	bool tabDeleted;	// Flag to fix render bug for tab deletion
 	bool textbox;		// When wrapping, start at startPos,x instead of 0, as well as treat maxPos.y as a limiter
 	bool initialized;	// Buffer has been utilized by one of the Text Input (plTermTI*) routines
 } pltibuf_t;
@@ -244,15 +245,19 @@ pltermsc_t plTermTIRenderAction(plterm_t* termStruct, pltibuf_t* bufferStruct, p
 
 	switch(inputKey.bytes[0]){
 		case PLTERM_KEY_BACKSPACE:
-			inputKey.bytes[0] = PLTERM_KEY_LEFT;
-			plTermTILeftRight(termStruct, bufferStruct, inputKey, false);
+			if(bufferStruct->tabDeleted){
+				int16_t movementUnit = plTermTIDetermineTabMovLeft(bufferStruct, currentPos);
+			}else{
+				inputKey.bytes[0] = PLTERM_KEY_LEFT;
+				plTermTILeftRight(termStruct, bufferStruct, inputKey, false);
 
-			inputKey.bytes[0] = ' ';
-			plTermTIPrintChar(termStruct, bufferStruct, inputKey);
+				inputKey.bytes[0] = ' ';
+				plTermTIPrintChar(termStruct, bufferStruct, inputKey);
 
-			inputKey.bytes[0] = PLTERM_KEY_LEFT;
-			currentPos = plTermTILeftRight(termStruct, bufferStruct, inputKey, true);
-			inputKey.bytes[0] = PLTERM_KEY_BACKSPACE;
+				inputKey.bytes[0] = PLTERM_KEY_LEFT;
+				currentPos = plTermTILeftRight(termStruct, bufferStruct, inputKey, true);
+				inputKey.bytes[0] = PLTERM_KEY_BACKSPACE;
+			}
 			break;
 		case PLTERM_KEY_DEL:
 			plptr_t tempBuf = bufferStruct->buffer.data;
@@ -262,8 +267,11 @@ pltermsc_t plTermTIRenderAction(plterm_t* termStruct, pltibuf_t* bufferStruct, p
 			for(int i = 0; i < tempBuf.size; i++)
 				plTermTIPrintChar(termStruct, bufferStruct, ((plchar_t*)tempBuf.pointer)[i]);
 
-			plchar_t space = { .bytes = { ' ', '\0', '\0', '\0' } };
-			plTermTIPrintChar(termStruct, bufferStruct, space);
+			plchar_t clearChar = { .bytes = { ' ', '\0', '\0', '\0' } };
+			if(bufferStruct->tabDeleted)
+				clearChar.bytes[0] = '\t';
+
+			plTermTIPrintChar(termStruct, bufferStruct, clearChar);
 			plTermMove(termStruct, currentPos.x, currentPos.y);
 			break;
 		default:
@@ -279,12 +287,18 @@ void plTermTIDelete(plterm_t* termStruct, pltibuf_t* bufferStruct, plchar_t inpu
 
 	switch(inputKey.bytes[0]){
 		case PLTERM_KEY_DEL:
+			if(((plchar_t*)bufferStruct->buffer.data.pointer)[bufferStruct->offset - 1].bytes[0] == '\t')
+				bufferStruct->tabDeleted = true;
+
 			if(bufferStruct->offset + 1 < bufferStruct->currentUsage){
 				memmove(bufferStruct->buffer.data.pointer + (bufferStruct->offset * sizeof(plchar_t)), bufferStruct->buffer.data.pointer + ((bufferStruct->offset + 1) * sizeof(plchar_t)), (bufferStruct->currentUsage - bufferStruct->offset) * sizeof(plchar_t));
 				charDeleted = true;
 			}
 			break;
 		case PLTERM_KEY_BACKSPACE:
+			if(((plchar_t*)bufferStruct->buffer.data.pointer)[bufferStruct->offset].bytes[0] == '\t')
+				bufferStruct->tabDeleted = true;
+
 			if(bufferStruct->offset > 0){
 				memmove(bufferStruct->buffer.data.pointer + ((bufferStruct->offset - 1) * sizeof(plchar_t)), bufferStruct->buffer.data.pointer + (bufferStruct->offset * sizeof(plchar_t)), (bufferStruct->currentUsage - bufferStruct->offset) * sizeof(plchar_t));
 				charDeleted = true;
@@ -348,6 +362,7 @@ plchar_t plTermReadline(plterm_t* termStruct, pltibuf_t* bufferStruct, plstring_
 		inputKey.bytes[0] = keyHolder;
 	}
 
+	bufferStruct->tabDeleted = false;
 	return inputKey;
 }
 
