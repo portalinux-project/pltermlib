@@ -247,7 +247,8 @@ pltermsc_t plTermTIRenderAction(plterm_t* termStruct, pltibuf_t* bufferStruct, p
 		case PLTERM_KEY_BACKSPACE:
 			if(bufferStruct->tabDeleted){
 				int16_t movementUnit = plTermTIDetermineTabMovLeft(bufferStruct, currentPos);
-				plTermMoveRel(0, movementUnit)
+				plTermRelMove(termStruct, -movementUnit, 0);
+				bufferStruct->offset--;
 			}else{
 				inputKey.bytes[0] = PLTERM_KEY_LEFT;
 				plTermTILeftRight(termStruct, bufferStruct, inputKey, false);
@@ -289,18 +290,20 @@ void plTermTIDelete(plterm_t* termStruct, pltibuf_t* bufferStruct, plchar_t inpu
 	switch(inputKey.bytes[0]){
 		case PLTERM_KEY_DEL:
 			if(bufferStruct->offset + 1 < bufferStruct->currentUsage){
-				memmove(bufferStruct->buffer.data.pointer + (bufferStruct->offset * sizeof(plchar_t)), bufferStruct->buffer.data.pointer + ((bufferStruct->offset + 1) * sizeof(plchar_t)), (bufferStruct->currentUsage - bufferStruct->offset) * sizeof(plchar_t));
-				charDeleted = true;
 				if(((plchar_t*)bufferStruct->buffer.data.pointer)[bufferStruct->offset].bytes[0] == '\t')
 					bufferStruct->tabDeleted = true;
-				}
+
+				memmove(bufferStruct->buffer.data.pointer + (bufferStruct->offset * sizeof(plchar_t)), bufferStruct->buffer.data.pointer + ((bufferStruct->offset + 1) * sizeof(plchar_t)), (bufferStruct->currentUsage - bufferStruct->offset) * sizeof(plchar_t));
+				charDeleted = true;
+			}
 			break;
 		case PLTERM_KEY_BACKSPACE:
 			if(bufferStruct->offset > 0){
-				memmove(bufferStruct->buffer.data.pointer + ((bufferStruct->offset - 1) * sizeof(plchar_t)), bufferStruct->buffer.data.pointer + (bufferStruct->offset * sizeof(plchar_t)), (bufferStruct->currentUsage - bufferStruct->offset) * sizeof(plchar_t));
-				charDeleted = true;
 				if(((plchar_t*)bufferStruct->buffer.data.pointer)[bufferStruct->offset - 1].bytes[0] == '\t')
 					bufferStruct->tabDeleted = true;
+
+				memmove(bufferStruct->buffer.data.pointer + ((bufferStruct->offset - 1) * sizeof(plchar_t)), bufferStruct->buffer.data.pointer + (bufferStruct->offset * sizeof(plchar_t)), (bufferStruct->currentUsage - bufferStruct->offset) * sizeof(plchar_t));
+				charDeleted = true;
 			}
 			break;
 	}
