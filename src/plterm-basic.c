@@ -247,7 +247,14 @@ pltermsc_t plTermTIRenderAction(plterm_t* termStruct, pltibuf_t* bufferStruct, p
 		case PLTERM_KEY_BACKSPACE:
 			if(bufferStruct->tabDeleted){
 				int16_t movementUnit = plTermTIDetermineTabMovLeft(bufferStruct, currentPos);
-				plTermRelMove(termStruct, -movementUnit, 0);
+				int16_t deleteUnit = bufferStruct->currentUsage - bufferStruct->offset;
+				for(int i = 0; i < deleteUnit; i++){
+					inputKey.bytes[0] = ' ';
+					plTermPrintChar(termStruct, inputKey);
+				}
+
+				plTermRelMove(termStruct, -(movementUnit + deleteUnit), 0);
+				inputKey.bytes[0] = PLTERM_KEY_BACKSPACE;
 				bufferStruct->offset--;
 			}else{
 				inputKey.bytes[0] = PLTERM_KEY_LEFT;
