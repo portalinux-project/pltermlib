@@ -366,7 +366,7 @@ plchar_t plTermReadline(plterm_t* termStruct, pltibuf_t* bufferStruct, plstring_
 		currentPos = plTermTIRenderAction(termStruct, bufferStruct, inputKey);
 	}
 
-	if((!plTermIsNoise(inputKey) || inputKey.bytes[0] == PLTERM_KEY_BACKSPACE) && (oldUsage < bufferStruct->currentUsage || (oldUsage > bufferStruct->currentUsage && bufferStruct->offset + 1 < bufferStruct->currentUsage))){
+	if((!plTermIsNoise(inputKey) || inputKey.bytes[0] == PLTERM_KEY_BACKSPACE) && (oldUsage > bufferStruct->currentUsage || (oldUsage < bufferStruct->currentUsage && bufferStruct->offset + 1 < bufferStruct->currentUsage))){
 		uint8_t keyHolder = inputKey.bytes[0];
 		inputKey.bytes[0] = PLTERM_KEY_DEL;
 		plTermTIRenderAction(termStruct, bufferStruct, inputKey);
