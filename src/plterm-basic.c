@@ -277,8 +277,10 @@ pltermsc_t plTermTIRenderAction(plterm_t* termStruct, pltibuf_t* bufferStruct, p
 				plTermTIPrintChar(termStruct, bufferStruct, ((plchar_t*)tempBuf.pointer)[i]);
 
 			plchar_t clearChar = { .bytes = { ' ', '\0', '\0', '\0' } };
-			if(bufferStruct->tabDeleted)
+			if(bufferStruct->tabDeleted){
 				clearChar.bytes[0] = '\t';
+				plTermTIPrintChar(termStruct, bufferStruct, clearChar);
+			}
 
 			plTermTIPrintChar(termStruct, bufferStruct, clearChar);
 			plTermMove(termStruct, currentPos.x, currentPos.y);
@@ -364,7 +366,7 @@ plchar_t plTermReadline(plterm_t* termStruct, pltibuf_t* bufferStruct, plstring_
 		currentPos = plTermTIRenderAction(termStruct, bufferStruct, inputKey);
 	}
 
-	if((!plTermIsNoise(inputKey) || inputKey.bytes[0] == PLTERM_KEY_BACKSPACE) && oldUsage != bufferStruct->currentUsage && bufferStruct->offset + 1 < bufferStruct->currentUsage){
+	if((!plTermIsNoise(inputKey) || inputKey.bytes[0] == PLTERM_KEY_BACKSPACE) && (oldUsage < bufferStruct->currentUsage || (oldUsage > bufferStruct->currentUsage && bufferStruct->offset + 1 < bufferStruct->currentUsage))){
 		uint8_t keyHolder = inputKey.bytes[0];
 		inputKey.bytes[0] = PLTERM_KEY_DEL;
 		plTermTIRenderAction(termStruct, bufferStruct, inputKey);

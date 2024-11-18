@@ -155,6 +155,17 @@ plchar_t plTermInputDriver(char* charBuf, plterm_t* termStruct){
 					case 'D':
 						retVal.bytes[0] = PLTERM_KEY_LEFT;
 						break;
+					case '~':
+						char* junkPtr;
+						int tildeNumber = strtol(charBuf + 2, &junkPtr, 10);
+						switch(tildeNumber){
+							case 3:
+								retVal.bytes[0] = PLTERM_KEY_DEL;
+								break;
+							default:
+								retVal.bytes[0] = 0;
+						}
+						break;
 					default:
 						retVal.bytes[0] = 0;
 				}
