@@ -22,15 +22,15 @@ void plTermSetBackground(plterm_t* termStruct, pltermcolor_t color){
 	if(color < 40 && color > 47)
 		return;
 
-	size_t terminalSize[2];
-	plTermGetAttrib(terminalSize, PLTERM_SIZE, termStruct);
-	plTermFillArea(termStruct, color, 1, 1, terminalSize[0], terminalSize[1]);
+	pltermsc_t terminalSize;
+	plTermGetAttrib(&terminalSize, PLTERM_SIZE, termStruct);
+	plTermFillArea(termStruct, color, 1, 1, terminalSize.x, terminalSize.y);
 }
 
 void plTermPrintHeader(plterm_t* termStruct, plstring_t string, pltermcolor_t color, uint16_t y, uint16_t textOffset){
-	size_t terminalSize[2];
-	plTermGetAttrib(terminalSize, PLTERM_SIZE, termStruct);
-	plTermFillArea(termStruct, color, 1, y, terminalSize[0], y);
+	pltermsc_t terminalSize;
+	plTermGetAttrib(&terminalSize, PLTERM_SIZE, termStruct);
+	plTermFillArea(termStruct, color, 1, y, terminalSize.x, y);
 
 	if(color > 7 && color != PLTERM_FONT_BCOL_BLACK){
 		plTermChangeColor(PLTERM_FONT_FCOL_BLACK);
