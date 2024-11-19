@@ -176,7 +176,7 @@ int16_t plTermTIDetermineTabMovLeft(pltibuf_t* bufferStruct, pltermsc_t currentP
 	}
 
 	workOffset = (relWorkPos.y * textAreaSize.x) + relWorkPos.x;
-	return ((int16_t)currentOffset - workOffset);
+	return (int16_t)(currentOffset - workOffset);
 }
 
 int16_t plTermTIDetermineTabMovRight(pltibuf_t* bufferStruct, pltermsc_t currentPos){
@@ -187,7 +187,10 @@ int16_t plTermTIDetermineTabMovRight(pltibuf_t* bufferStruct, pltermsc_t current
 		relCurrentPos = plTermTIMakeRelative(bufferStruct->startPos, currentPos);
 	}
 
-	return relCurrentPos.x + bufferStruct->tabWidth >= textAreaSize.x ? ((int16_t)textAreaSize.x - relCurrentPos.x) : ((int16_t)bufferStruct->tabWidth - (relCurrentPos.x % bufferStruct->tabWidth) + 1);
+	if(relCurrentPos.x + bufferStruct->tabWidth < textAreaSize.x)
+		return (int16_t)(bufferStruct->tabWidth - (relCurrentPos.x % bufferStruct->tabWidth) + 1);
+	else
+		return (int16_t)(textAreaSize.x - relCurrentPos.x);
 }
 
 void plTermTIPrintChar(plterm_t* termStruct, pltibuf_t* bufferStruct, plchar_t ch){
