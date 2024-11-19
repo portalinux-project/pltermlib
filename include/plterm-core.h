@@ -4,9 +4,9 @@
 #include <unistd.h>
 #include <termios.h>
 
-#define PLTERM_VERSION "0.05"
+#define PLTERM_VERSION "0.06"
 #define PLTERM_API_VER 0
-#define PLTERM_FEATURELVL 5
+#define PLTERM_FEATURELVL 6
 #define PLTERM_PATCHLVL 0
 
 typedef enum pltermkey {
