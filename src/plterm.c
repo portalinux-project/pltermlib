@@ -111,7 +111,7 @@ void plTermUpdateSize(plterm_t* termStruct){
 		plTermToggleCursor(termStruct);
 }
 
-plchar_t plTermInputDriver(char* charBuf, plterm_t* termStruct){
+plchar_t plTermInputDriver(uint8_t* charBuf, plterm_t* termStruct){
 	plchar_t retVal = { .bytes = { charBuf[0], 0, 0, 0 } };
 	if(termStruct->extraChar != 0){
 		retVal.bytes[0] = termStruct->extraChar;
@@ -174,6 +174,14 @@ plchar_t plTermInputDriver(char* charBuf, plterm_t* termStruct){
 
 		if(!termStruct->nonblockInput)
 			fcntl(STDIN_FILENO, F_SETFL, termStruct->inputFlags);
+	}else if(charBuf[0] >= 192){
+		size_t readSize = 1;
+		if(charBuf[0] >= 224)
+			readSize++;
+		if(charBuf[0] >= 240)
+			readSize++;
+
+		read(STDIN_FILENO, retVal.bytes + 1, readSize);
 	}
 
 	return retVal;

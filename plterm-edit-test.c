@@ -7,7 +7,7 @@ int main(int argc, char* argv[]){
 	plchar_t keypress = plTermReadline(term, buffer, plRTStrFromCStr("test-shell>", NULL));
 
 	while(keypress.bytes[0] != PLTERM_KEY_ENTER)
-		keypress = plTermReadline(term, buffer, plRTStrFromCStr("test-shell", NULL));
+		keypress = plTermReadline(term, buffer, plRTStrFromCStr("test-shell>", NULL));
 
 	plTermStop(term);
 	plstring_t* stringPtr = plTermGetRawBuffer(buffer);
