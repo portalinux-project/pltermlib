@@ -257,14 +257,17 @@ pltermsc_t plTermTIRenderAction(plterm_t* termStruct, pltibuf_t* bufferStruct, p
 			if(bufferStruct->tabDeleted){
 				int16_t movementUnit = plTermTIDetermineTabMovLeft(bufferStruct, currentPos);
 				int16_t deleteUnit = bufferStruct->currentUsage - bufferStruct->offset;
-				if(currentPos.x + movementUnit < bufferStruct->maxPos.x){
+				if(currentPos.x + deleteUnit < bufferStruct->maxPos.x){
 					inputKey.bytes[0] = ' ';
 					for(int i = 0; i < deleteUnit; i++)
 						plTermPrintChar(termStruct, inputKey);
 
-					plTermRelMove(termStruct, -(movementUnit + deleteUnit), 0);
+					plTermRelMove(termStruct, -deleteUnit, 0);
 					inputKey.bytes[0] = PLTERM_KEY_BACKSPACE;
 				}
+
+				if(movementUnit > 0)
+					plTermRelMove(termStruct, -movementUnit, 0);
 
 				bufferStruct->offset--;
 			}else{
@@ -342,7 +345,7 @@ void plTermTIInsert(plterm_t* termStruct, pltibuf_t* bufferStruct, plchar_t inpu
 }
 
 plchar_t plTermReadline(plterm_t* termStruct, pltibuf_t* bufferStruct, plstring_t prompt){
-	pltermsc_t currentPos, termSize;
+	pltermsc_t currentPos;
 	size_t oldUsage = bufferStruct->currentUsage;
 	plmt_t* mt;
 
