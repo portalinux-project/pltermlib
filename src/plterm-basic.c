@@ -265,6 +265,9 @@ pltermsc_t plTermTIRenderAction(plterm_t* termStruct, pltibuf_t* bufferStruct, p
 
 				for(int i = 0; i < amountOfPrints - 1; i++)
 					plTermTIPrintChar(termStruct, bufferStruct, clearChar);
+
+				//if(currentPos.x + amountOfPrints > bufferStruct->maxPos.x && currentPos.y == bufferStruct->maxPos.y)
+				//	currentPos.y--;
 			}
 
 			plTermTIPrintChar(termStruct, bufferStruct, clearChar);

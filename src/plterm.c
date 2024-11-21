@@ -276,7 +276,8 @@ void plTermPrint(plterm_t* termStruct, plstring_t string){
 		termStruct->pos.x += string.data.size;
 		if(termStruct->pos.x > termStruct->size.x){
 			termStruct->pos.x -= termStruct->size.x;
-			termStruct->pos.y++;
+			if(termStruct->pos.y < termStruct->size.y)
+				termStruct->pos.y++;
 		}
 	}
 }
@@ -297,7 +298,8 @@ void plTermPrintChar(plterm_t* termStruct, plchar_t chr){
 		termStruct->pos.x++;
 		if(termStruct->pos.x > termStruct->size.x){
 			termStruct->pos.x = 1;
-			termStruct->pos.y++;
+			if(termStruct->pos.y < termStruct->size.y)
+				termStruct->pos.y++;
 		}
 	}
 }
