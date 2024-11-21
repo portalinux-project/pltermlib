@@ -193,10 +193,16 @@ void plTermTIPrintChar(plterm_t* termStruct, pltibuf_t* bufferStruct, plchar_t c
 	plTermGetAttrib(&currentPos, PLTERM_POS, termStruct);
 	if(ch.bytes[0] == '\t'){
 		int16_t tabLength = plTermTIDetermineTabMovRight(bufferStruct, currentPos);
+		if(currentPos.x + tabLength > bufferStruct->maxPos.x && currentPos.y == bufferStruct->maxPos.y)
+			bufferStruct->startPos.y--;
+
 		ch.bytes[0] = ' ';
 		for(int i = 0; i < tabLength; i++)
 			plTermPrintChar(termStruct, ch);
 	}else{
+		if(currentPos.x + 1 > bufferStruct->maxPos.x && currentPos.y == bufferStruct->maxPos.y)
+			bufferStruct->startPos.y--;
+
 		plTermPrintChar(termStruct, ch);
 	}
 }
