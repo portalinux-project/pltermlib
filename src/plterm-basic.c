@@ -210,7 +210,7 @@ pltermsc_t plTermTILeftRight(plterm_t* termStruct, pltibuf_t* bufferStruct, plch
 	plTermGetAttrib(&currentPos, PLTERM_POS, termStruct);
 
 	if(bufferStruct->offset > 0 && inputKey.bytes[0] == PLTERM_KEY_LEFT){
-		if(((plchar_t*)bufferStruct->buffer.data.pointer)[bufferStruct->offset - 1].bytes[0] == '\t')
+		if(((plchar_t*)bufferStruct->buffer.data.pointer)[bufferStruct->offset - 1].bytes[0] == '\t' || bufferStruct->tabDeleted)
 			movementUnits = plTermTIDetermineTabMovLeft(bufferStruct, currentPos);
 
 		if(currentPos.x - startingPoint < movementUnits){
@@ -247,28 +247,9 @@ pltermsc_t plTermTIRenderAction(plterm_t* termStruct, pltibuf_t* bufferStruct, p
 
 	switch(inputKey.bytes[0]){
 		case PLTERM_KEY_BACKSPACE:
-			if(bufferStruct->tabDeleted && (currentPos.x > 0 || (currentPos.x > bufferStruct->startPos.x && bufferStruct->textbox))){
-				int16_t movementUnit = plTermTIDetermineTabMovLeft(bufferStruct, currentPos);
-				int16_t deleteUnit = bufferStruct->currentUsage - bufferStruct->offset;
-				inputKey.bytes[0] = ' ';
-				for(int i = 0; i < deleteUnit; i++)
-					plTermPrintChar(termStruct, inputKey);
-
-				plTermRelMove(termStruct, -deleteUnit, 0);
-				inputKey.bytes[0] = PLTERM_KEY_BACKSPACE;
-				plTermRelMove(termStruct, -movementUnit, 0);
-				bufferStruct->offset--;
-			}else{
-				inputKey.bytes[0] = PLTERM_KEY_LEFT;
-				plTermTILeftRight(termStruct, bufferStruct, inputKey, false);
-
-				inputKey.bytes[0] = ' ';
-				plTermTIPrintChar(termStruct, bufferStruct, inputKey);
-
-				inputKey.bytes[0] = PLTERM_KEY_LEFT;
-				currentPos = plTermTILeftRight(termStruct, bufferStruct, inputKey, true);
-				inputKey.bytes[0] = PLTERM_KEY_BACKSPACE;
-			}
+			inputKey.bytes[0] = PLTERM_KEY_LEFT;
+			currentPos = plTermTILeftRight(termStruct, bufferStruct, inputKey, true);
+			inputKey.bytes[0] = PLTERM_KEY_BACKSPACE;
 			break;
 		case PLTERM_KEY_DEL:
 			plptr_t tempBuf = bufferStruct->buffer.data;
@@ -280,8 +261,10 @@ pltermsc_t plTermTIRenderAction(plterm_t* termStruct, pltibuf_t* bufferStruct, p
 
 			plchar_t clearChar = { .bytes = { ' ', '\0', '\0', '\0' } };
 			if(bufferStruct->tabDeleted){
-				clearChar.bytes[0] = '\t';
-				plTermTIPrintChar(termStruct, bufferStruct, clearChar);
+				int16_t amountOfPrints = bufferStruct->tabWidth;
+
+				for(int i = 0; i < amountOfPrints - 1; i++)
+					plTermTIPrintChar(termStruct, bufferStruct, clearChar);
 			}
 
 			plTermTIPrintChar(termStruct, bufferStruct, clearChar);
