@@ -234,7 +234,7 @@ pltermsc_t plTermTILeftRight(plterm_t* termStruct, pltibuf_t* bufferStruct, plch
 		if(((plchar_t*)bufferStruct->buffer.data.pointer)[bufferStruct->offset].bytes[0] == '\t')
 			movementUnits = plTermTIDetermineTabMovRight(bufferStruct, currentPos);
 
-		if(currentPos.x + movementUnits > bufferStruct->maxPos.x)
+		if(currentPos.x + movementUnits >= bufferStruct->maxPos.x)
 			plTermMove(termStruct, (currentPos.x + movementUnits) - bufferStruct->maxPos.x, currentPos.y + 1);
 		else
 			plTermRelMove(termStruct, movementUnits, 0);
