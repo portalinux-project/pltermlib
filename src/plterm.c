@@ -243,6 +243,14 @@ void plTermRelMove(plterm_t* termStruct, int x, int y){
 	termStruct->pos = plTermGetPosition(termStruct);
 }
 
+void plTermScrollUp(plterm_t* termStruct){
+
+}
+
+void plTermScrollDown(plterm_t* termStruct){
+
+}
+
 int plTermChangeColor(pltermcolor_t color){
 	bool forecolorOutOfRange = color < 30 || color > 37;
 	bool backcolorOutOfRange = color < 40 || color > 47;
@@ -299,7 +307,11 @@ void plTermPrintChar(plterm_t* termStruct, plchar_t chr){
 		if(termStruct->pos.x > termStruct->size.x){
 			termStruct->pos.x = 1;
 			if(termStruct->pos.y < termStruct->size.y)
+				plTermScrollDown(termStruct);
+			else
 				termStruct->pos.y++;
+
+			plTermMove(termStruct, 1, termStruct->pos.y);
 		}
 	}
 }

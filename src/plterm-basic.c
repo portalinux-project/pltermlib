@@ -193,14 +193,14 @@ void plTermTIPrintChar(plterm_t* termStruct, pltibuf_t* bufferStruct, plchar_t c
 	plTermGetAttrib(&currentPos, PLTERM_POS, termStruct);
 	if(ch.bytes[0] == '\t'){
 		int16_t tabLength = plTermTIDetermineTabMovRight(bufferStruct, currentPos);
-		if(currentPos.x + tabLength >= bufferStruct->maxPos.x && currentPos.y == bufferStruct->maxPos.y)
+		if(currentPos.x + tabLength > bufferStruct->maxPos.x && currentPos.y == bufferStruct->maxPos.y)
 			bufferStruct->startPos.y--;
 
 		ch.bytes[0] = ' ';
 		for(int i = 0; i < tabLength; i++)
 			plTermPrintChar(termStruct, ch);
 	}else{
-		if(currentPos.x + 1 >= bufferStruct->maxPos.x && currentPos.y == bufferStruct->maxPos.y)
+		if(currentPos.x + 1 > bufferStruct->maxPos.x && currentPos.y == bufferStruct->maxPos.y)
 			bufferStruct->startPos.y--;
 
 		plTermPrintChar(termStruct, ch);
@@ -211,6 +211,8 @@ void plTermTIPrintChar(plterm_t* termStruct, pltibuf_t* bufferStruct, plchar_t c
 		if(currentPos.y == bufferStruct->maxPos.y){
 			ch.bytes[0] = ' ';
 			plTermPrintChar(termStruct, ch);
+			plTermMove(termStruct, 1, currentPos.y);
+			bufferStruct->startPos.y--;
 		}else{
 			plTermMove(termStruct, 1, currentPos.y + 1);
 		}
@@ -244,7 +246,7 @@ pltermsc_t plTermTILeftRight(plterm_t* termStruct, pltibuf_t* bufferStruct, plch
 		if(((plchar_t*)bufferStruct->buffer.data.pointer)[bufferStruct->offset].bytes[0] == '\t')
 			movementUnits = plTermTIDetermineTabMovRight(bufferStruct, currentPos);
 
-		if(currentPos.x + movementUnits >= bufferStruct->maxPos.x)
+		if(currentPos.x + movementUnits > bufferStruct->maxPos.x)
 			plTermMove(termStruct, (currentPos.x + movementUnits) - bufferStruct->maxPos.x, currentPos.y + 1);
 		else
 			plTermRelMove(termStruct, movementUnits, 0);
