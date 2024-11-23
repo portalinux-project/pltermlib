@@ -109,7 +109,7 @@ void plTermMove(plterm_t* termStruct, uint16_t x, uint16_t y);
 void plTermRelMove(plterm_t* termStruct, int x, int y);
 int plTermChangeColor(pltermcolor_t color);
 void plTermPrint(plterm_t* termStruct, plstring_t string);
-void plTermPrintChar(plterm_t* termStruct, plchar_t ch);
+bool plTermPrintChar(plterm_t* termStruct, plchar_t ch);
 void plTermMovePrint(plterm_t* termStruct, uint16_t x, uint16_t y, plstring_t string);
 
 void plTermFillArea(plterm_t* termStruct, pltermcolor_t color, uint16_t xStart, uint16_t yStart, uint16_t xStop, uint16_t yStop);

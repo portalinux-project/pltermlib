@@ -243,12 +243,15 @@ void plTermRelMove(plterm_t* termStruct, int x, int y){
 	termStruct->pos = plTermGetPosition(termStruct);
 }
 
-void plTermScrollUp(plterm_t* termStruct){
+void plTermScroll(plterm_t* termStruct, uint16_t rowsToShift){
+	char tempStr[8] = "";
+	if(rowsToShift > 0)
+		snprintf(tempStr, 8, "\x1b[%dS", rowsToShift);
+	else if(rowsToShift < 0)
+		snprintf(tempStr, 8, "\x1b[%dT", rowsToShift);
 
-}
-
-void plTermScrollDown(plterm_t* termStruct){
-
+	if(rowsToShift != 0)
+		write(STDOUT_FILENO, tempStr, strlen(tempStr));
 }
 
 int plTermChangeColor(pltermcolor_t color){
@@ -290,7 +293,8 @@ void plTermPrint(plterm_t* termStruct, plstring_t string){
 	}
 }
 
-void plTermPrintChar(plterm_t* termStruct, plchar_t chr){
+bool plTermPrintChar(plterm_t* termStruct, plchar_t chr){
+	bool lineScroll = false;
 	size_t chrSize = 1;
 	if (chr.bytes[0] > 240)
 		chrSize = 4;
@@ -306,14 +310,18 @@ void plTermPrintChar(plterm_t* termStruct, plchar_t chr){
 		termStruct->pos.x++;
 		if(termStruct->pos.x > termStruct->size.x){
 			termStruct->pos.x = 1;
-			if(termStruct->pos.y < termStruct->size.y)
-				plTermScrollDown(termStruct);
-			else
+			if(termStruct->pos.y == termStruct->size.y){
+				plTermScroll(termStruct, 1);
+				lineScroll = true;
+			}else{
 				termStruct->pos.y++;
+			}
 
 			plTermMove(termStruct, 1, termStruct->pos.y);
 		}
 	}
+
+	return lineScroll;
 }
 
 void plTermMovePrint(plterm_t* termStruct, uint16_t x, uint16_t y, plstring_t string){
