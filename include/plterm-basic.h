@@ -14,3 +14,4 @@ pltibuf_t* plTermCreateTextBuffer(plmt_t* mt, size_t bufferSize, bool usePLChar)
 pltibuf_t* plTermPLStringToTextBuffer(plmt_t* mt, plstring_t string);
 plstring_t* plTermGetRawBuffer(pltibuf_t* bufferStruct);
 plchar_t plTermReadline(plterm_t* termStruct, pltibuf_t* buffer, plstring_t prompt);
+plchar_t plTermTextbox(plterm_t* termStruct, pltibuf_t* buffer, pltermsc_t textboxSize, uint16_t tabWidth);
