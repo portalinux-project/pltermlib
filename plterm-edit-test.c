@@ -7,7 +7,14 @@ void readlineMode(plterm_t* termStruct, pltibuf_t* bufferStruct){
 }
 
 void textboxMode(plterm_t* termStruct, pltibuf_t* bufferStruct){
-	plchar_t keypress; // = plTermTextBox(termStruct, bufferStruct);
+	plTermClearScreen(termStruct);
+	plTermMove(termStruct, 10, 10);
+	pltermsc_t textboxSize = { .x = 80, .y = 25 };
+	plchar_t keypress = plTermTextbox(termStruct, bufferStruct, textboxSize, 8);
+	while(keypress.bytes[0] != PLTERM_KEY_ESCAPE)
+		keypress = plTermTextbox(termStruct, bufferStruct, textboxSize, 8);
+
+	plTermClearScreen(termStruct);
 }
 
 int main(int argc, char* argv[]){
